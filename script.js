@@ -8,6 +8,14 @@ let lastSpeakTime = 0;
 let currentSpeakId = 0;
 const ttsAudio = new Audio();
 
+ttsAudio.id = "tts-audio";
+ttsAudio.preload = "auto";
+ttsAudio.playsInline = true;
+ttsAudio.setAttribute("playsinline", "");
+ttsAudio.setAttribute("webkit-playsinline", "");
+document.body.appendChild(ttsAudio);
+
+
 // NEW: Full workout sequence (warm-up + main workout)
 let fullWorkoutSequence = [];
 
@@ -1406,39 +1414,42 @@ const TTS_RETRIES = 2; // retry Google TTS a couple of times before falling back
 
 async function speak(text, lang = "it-IT") {
   try {
-    const voice = lang === "it-IT" ? "it-IT-Wavenet-C" : "en-US-Wavenet-D";
+    await ensureAudioUnlocked(); // ✅ Force-unlock AudioContext first
 
-    const response = await fetch("https://google-tts-server.onrender.com/speak", {
+    const voice = lang === "it-IT" ? "it-IT-Wavenet-C" : "en-US-Wavenet-D";
+    const res = await fetch("https://google-tts-server.onrender.com/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, lang, voice }),
     });
 
-    if (!response.ok) throw new Error("Errore TTS");
-
-    const blob = await response.blob();
+    if (!res.ok) throw new Error("Errore TTS");
+    const blob = await res.blob();
     if (blob.size === 0) throw new Error("Audio vuoto");
 
+    // ✅ Use the same unlocked audio element every time
     const audioUrl = URL.createObjectURL(blob);
     ttsAudio.src = audioUrl;
+    ttsAudio.autoplay = false;
+    ttsAudio.playsInline = true;
+    ttsAudio.setAttribute("playsinline", "");
+    ttsAudio.setAttribute("webkit-playsinline", "");
 
-    await new Promise((resolve, reject) => {
-      ttsAudio.onended = resolve;
-      ttsAudio.onerror = reject;
-      ttsAudio.play();
+    await ttsAudio.play().catch((e) => {
+      console.warn("iOS playback failed:", e);
+      throw e;
     });
-  } catch (error) {
-    console.warn("❌ Google TTS fallito, uso fallback:", error);
-    await new Promise(resolve => {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = lang;
-      utter.rate = 1.0;
-      utter.onend = resolve;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utter);
-    });
+
+    // Clean blob after playback
+    ttsAudio.onended = () => {
+      try { URL.revokeObjectURL(audioUrl); } catch {}
+    };
+  } catch (err) {
+    console.warn("❌ Google TTS fallito, uso fallback:", err);
+    await webSpeechSpeak(text, lang); // fallback to system voice
   }
 }
+
 
 async function tryGoogleTTS(text, lang) {
   let lastErr;
@@ -1659,6 +1670,8 @@ function preloadWorkoutAudios() {
   preloadAudio(audioUrls);
 }
 
+
+document.addEventListener("touchend", ensureAudioUnlocked, { once: true });
 
 document.addEventListener("click", () => {
   if (!window.__audioUnlocked) {
