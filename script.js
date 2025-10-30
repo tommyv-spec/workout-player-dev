@@ -1125,20 +1125,17 @@ function buildStartPointSelector() {
 
 async function playExercise(index, exercises, resumeTime = null) {
   if (index >= exercises.length) {
-    // UI message (briefly show completion)
     document.getElementById("exercise-name").textContent = "Workout completato!";
     document.getElementById("exercise-gif").src = "";
     document.getElementById("timer").textContent = "";
     const nextPrev = document.getElementById("next-exercise-preview");
     if (nextPrev) nextPrev.style.display = "none";
 
-    // Unlock scroll
     document.body.style.overflow = "";
     document.body.style.position = "";
     document.body.style.width = "";
     document.body.style.height = "";
 
-    // Restore setup UI
     const header = document.querySelector("header");
     const setup = document.getElementById("setup-screen");
     const startBtn = document.getElementById("start-button-bottom");
@@ -1152,40 +1149,32 @@ async function playExercise(index, exercises, resumeTime = null) {
     if (startBtn) startBtn.style.display = "";
     if (topbarSelect) topbarSelect.style.display = "block";
     if (setupGear) setupGear.style.display = "block";
-
     return;
   }
-
 
   const exercise = exercises[index];
   const nextExercise = exercises[index + 1];
 
-  // Build reps and equipment info
   const hasReps = exercise.reps && !exercise.name.toLowerCase().includes("istruz");
   const hasEquipment = exercise.tipoDiPeso && !exercise.name.toLowerCase().includes("istruz") && !exercise.isLabel;
-  
+
   let infoText = "";
-  if (hasReps && hasEquipment) {
-    infoText = `${exercise.reps} reps | ${exercise.tipoDiPeso}`;
-  } else if (hasReps) {
-    infoText = `${exercise.reps} reps`;
-  } else if (hasEquipment) {
-    infoText = exercise.tipoDiPeso;
-  }
-  
-  const currentInfo = infoText 
-    ? `<div style="font-size: 16px; font-weight: 600; margin-top: 8px; color: #FFD700;">${infoText}</div>`
+  if (hasReps && hasEquipment) infoText = `${exercise.reps} reps | ${exercise.tipoDiPeso}`;
+  else if (hasReps)           infoText = `${exercise.reps} reps`;
+  else if (hasEquipment)      infoText = exercise.tipoDiPeso;
+
+  const currentInfo = infoText
+    ? `<div style="font-size:16px;font-weight:600;margin-top:8px;color:#FFD700;">${infoText}</div>`
     : "";
 
   document.getElementById("exercise-name").innerHTML = `<strong>${exercise.name}</strong>${currentInfo}`;
   document.getElementById("exercise-gif").src = exercise.imageUrl;
   document.getElementById("next-exercise-preview").style.display = "none";
-  
-  // 🧹 CLEAN UP all visual cue effects from previous exercise
+
+  // cleanup visual cues
   const timerEl = document.getElementById("timer");
   const gifEl = document.getElementById("exercise-gif");
   const exerciseNameBar = document.getElementById("exercise-name");
-  
   timerEl.classList.remove("warning-10", "warning-6", "warning-3");
   gifEl.classList.remove("gif-glow");
   exerciseNameBar.classList.remove("next-preview-active");
@@ -1193,16 +1182,22 @@ async function playExercise(index, exercises, resumeTime = null) {
   const duration = resumeTime !== null ? resumeTime : savedTimeLeft ?? parseInt(exercise.duration);
   savedTimeLeft = null;
 
-  // Update progress bar
+  // show first value immediately
+  timerEl.textContent = duration;
+
   updateProgressBar();
 
-  const soundMode = document.getElementById("soundMode").value;
-  const useVoice = soundMode === "voice";
+  // 🔁 read mode here (define the booleans you use)
+  const mode = document.getElementById("soundMode").value;
+  const useVoiceCloud = mode === "voice";
+  const useVoiceSynth = mode === "synth";
 
-  if (useVoice) speak(exercise.name, detectLang(exercise.name));
+  if (useVoiceCloud) await speakCloud(exercise.name, detectLang(exercise.name));
+  if (useVoiceSynth) await speakSynth(exercise.name, detectLang(exercise.name));
 
   await startExerciseTimer(duration, exercise, nextExercise);
 }
+
 
 function resumeTimer() {
   clearInterval(interval);
@@ -1217,11 +1212,8 @@ function resumeTimer() {
 }
 
 async function startExerciseTimer(timeLeft, exercise, nextExercise) {
-  const soundMode = document.getElementById("soundMode").value;
-  const useVoice = soundMode === "voice";
-  const useBip = soundMode === "bip";
-
   clearInterval(interval);
+
   interval = setInterval(async () => {
     if (isPaused) {
       savedTimeLeft = timeLeft;
@@ -1232,45 +1224,44 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
     timeLeft--;
     document.getElementById("timer").textContent = timeLeft;
 
-      // 🔁 LEGGI SEMPRE LA MODALITÀ ATTUALE
-      const soundMode = document.getElementById("soundMode").value;
-      const useVoice = soundMode === "voice";
-      const useBip = soundMode === "bip";
+    // 🔁 Always read current mode each tick
+    const mode = document.getElementById("soundMode").value;
+    const useVoiceCloud = mode === "voice";
+    const useVoiceSynth = mode === "synth";
+    const useBip       = mode === "bip";
 
+    // 60s callout
     if (timeLeft === 60) {
-      const soundMode = document.getElementById("soundMode").value;
-      if (useVoice) speak("mancano sessanta secondi");
-      if (soundMode === "beppe") playBeppeAudio(beppeSounds.s60);
+      if (useVoiceCloud) speakCloud("mancano sessanta secondi", "it-IT");
+      if (useVoiceSynth) speakSynth("mancano sessanta secondi", "it-IT");
+      if (mode === "beppe") playBeppeAudio(beppeSounds.s60);
     }
 
+    // 30s callout
     if (timeLeft === 30) {
-      const soundMode = document.getElementById("soundMode").value;
-      if (useVoice) speak("mancano trenta secondi");
-      if (soundMode === "beppe") playBeppeAudio(beppeSounds.s30);
+      if (useVoiceCloud) speakCloud("mancano trenta secondi", "it-IT");
+      if (useVoiceSynth) speakSynth("mancano trenta secondi", "it-IT");
+      if (mode === "beppe") playBeppeAudio(beppeSounds.s30);
     }
 
+    // 10s: preview + cues
     if (timeLeft === 10) {
-      const soundMode = document.getElementById("soundMode").value;
-      
-      // ✨ TRIPLE VISUAL CUE ACTIVATION ✨
       const timerEl = document.getElementById("timer");
       const gifEl = document.getElementById("exercise-gif");
       const exerciseNameBar = document.getElementById("exercise-name");
-      
-      // 1. Activate timer warning color (yellow)
+
       timerEl.classList.add("warning-10");
-      
-      // 2. Activate GIF glow border
       gifEl.classList.add("gif-glow");
-      
-      // 3. Activate golden bar effect
       exerciseNameBar.classList.add("next-preview-active");
-      
+
       if (nextExercise) {
-        // Build next exercise info (reps + equipment)
+        // next exercise info (reps + equipment)
         const hasNextReps = nextExercise.reps && !nextExercise.name.toLowerCase().includes("istruz");
-        const hasNextEquipment = nextExercise.tipoDiPeso && !nextExercise.name.toLowerCase().includes("istruz") && !nextExercise.isLabel;
-        
+        const hasNextEquipment =
+          nextExercise.tipoDiPeso &&
+          !nextExercise.name.toLowerCase().includes("istruz") &&
+          !nextExercise.isLabel;
+
         let nextInfoText = "";
         if (hasNextReps && hasNextEquipment) {
           nextInfoText = `${nextExercise.reps} reps | ${nextExercise.tipoDiPeso}`;
@@ -1279,105 +1270,86 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
         } else if (hasNextEquipment) {
           nextInfoText = nextExercise.tipoDiPeso;
         }
-        
+
         const nextInfo = nextInfoText
           ? `<div style="font-size: 14px; font-weight: 600; margin-top: 4px;">${nextInfoText}</div>`
           : "";
-    
+
         document.getElementById("exercise-name").innerHTML =
           `<div style="font-size: 14px; opacity: 0.8; margin-bottom: 4px;">prossimo esercizio:</div><strong style="font-size: 18px;">${nextExercise.name}</strong>${nextInfo}`;
         document.getElementById("exercise-gif").src = nextExercise.imageUrl;
-    
-        // Riproduci annunci vocali a 10 secondi rimanenti
-        if (soundMode === "beppe") {
+
+        // voice preview
+        if (mode === "beppe") {
           const urls = [beppeSounds.prossimo];
           if (nextExercise.audio) urls.push(nextExercise.audio);
           playBeppeAudioSequence(urls);
-        } else if (useVoice) {
-          announceNextExercise(nextExercise);
+        } else if (useVoiceCloud) {
+          announceNextExerciseWith(speakCloud, nextExercise);
+        } else if (useVoiceSynth) {
+          announceNextExerciseWith(speakSynth, nextExercise);
         }
       }
-    
+
       if (useBip) playBeep();
     }
 
-
-
-
-
-    // Timer transition to ORANGE at 6 seconds
+    // 6s → orange
     if (timeLeft === 6) {
       const timerEl = document.getElementById("timer");
       timerEl.classList.remove("warning-10");
       timerEl.classList.add("warning-6");
     }
 
-
-    // Timer transition to RED at 3 seconds
+    // 3s → red
     if (timeLeft === 3) {
       const timerEl = document.getElementById("timer");
       timerEl.classList.remove("warning-6");
       timerEl.classList.add("warning-3");
     }
 
+    // 5s countdown
     if (timeLeft === 5) {
-      const soundMode = document.getElementById("soundMode").value;
-      const useVoice = soundMode === "voice";
-      if (useVoice) speak("cinque, quattro, tre, due, uno");
-      if (soundMode === "beppe") playBeppeAudio(beppeSounds.countdown5);
+      if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
+      if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
+      if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
     }
 
-
+    // Next exercise
     if (timeLeft <= 0) {
-      const soundMode = document.getElementById("soundMode").value;
-      const useVoice = soundMode === "voice";
-      const useBip = soundMode === "bip";
       clearInterval(interval);
-      
-      // 🧹 CLEAN UP ALL VISUAL CUE EFFECTS
+
+      // clean visual cues
       const timerEl = document.getElementById("timer");
       const gifEl = document.getElementById("exercise-gif");
       const exerciseNameBar = document.getElementById("exercise-name");
-      
-      // Remove all timer warning classes
       timerEl.classList.remove("warning-10", "warning-6", "warning-3");
-      
-      // Remove GIF glow
       gifEl.classList.remove("gif-glow");
-      
-      // Remove golden bar effect
       exerciseNameBar.classList.remove("next-preview-active");
-    
-      // Avanza l'indice ORA
+
       currentStep++;
-      const nextExercise = fullWorkoutSequence[currentStep];
-    
-      // Pronuncia l'audioCambio del NUOVO esercizio in arrivo
-      if (soundMode === "beppe") {
+      const upcoming = fullWorkoutSequence[currentStep];
+
+      if (mode === "beppe") {
         const sequence = [];
-        if (nextExercise?.audioCambio) {
-          sequence.push(nextExercise.audioCambio);
-        }
-        if (sequence.length > 0) {
-          playBeppeAudioSequence(sequence);
-        }
-      } else if (useVoice && nextExercise) {
-            speak(nextExercise.name, detectLang(nextExercise.name));
+        if (upcoming?.audioCambio) sequence.push(upcoming.audioCambio);
+        if (sequence.length > 0) playBeppeAudioSequence(sequence);
+      } else if (useVoiceCloud && upcoming) {
+        speakCloud(upcoming.name, detectLang(upcoming.name));
+      } else if (useVoiceSynth && upcoming) {
+        speakSynth(upcoming.name, detectLang(upcoming.name));
       }
 
-    
       if (useBip) playTransition();
-    
+
       document.getElementById("next-exercise-preview").style.display = "none";
       savedTimeLeft = null;
-    
-      // Aspetta un attimo prima di partire col nuovo esercizio
+
       setTimeout(() => playExercise(currentStep, fullWorkoutSequence), 300);
     }
-
-
   }, 1000);
 }
+
 
 
 // 🔊 Text-to-speech (Google + fallback)
@@ -1428,22 +1400,21 @@ async function safePlay(el) {
 }
 
 
-async function speak(text, lang = "it-IT") {
+// --- NEW: explicit engines ---
+async function speakCloud(text, lang = "it-IT") {
+  // this is your current Google TTS logic (moved from speak)
   try {
-    await ensureAudioUnlocked(); // ✅ Force-unlock AudioContext first
-
+    await ensureAudioUnlocked();
     const voice = lang === "it-IT" ? "it-IT-Wavenet-C" : "en-US-Wavenet-D";
     const res = await fetch("https://google-tts-server.onrender.com/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, lang, voice }),
     });
-
     if (!res.ok) throw new Error("Errore TTS");
     const blob = await res.blob();
     if (blob.size === 0) throw new Error("Audio vuoto");
 
-    // ✅ Use the same unlocked audio element every time
     const audioUrl = URL.createObjectURL(blob);
     ttsAudio.src = audioUrl;
     ttsAudio.autoplay = false;
@@ -1451,18 +1422,31 @@ async function speak(text, lang = "it-IT") {
     ttsAudio.setAttribute("playsinline", "");
     ttsAudio.setAttribute("webkit-playsinline", "");
 
-    await safePlay(ttsAudio);
-
-
-    // Clean blob after playback
-    ttsAudio.onended = () => {
-      try { URL.revokeObjectURL(audioUrl); } catch {}
-    };
+    await ttsAudio.play().catch((e) => { throw e; });
+    ttsAudio.onended = () => { try { URL.revokeObjectURL(audioUrl); } catch {} };
   } catch (err) {
-    console.warn("❌ Google TTS fallito, uso fallback:", err);
-    await webSpeechSpeak(text, lang); // fallback to system voice
+    // If cloud fails in "voice" mode we DO NOT auto-fallback to synth anymore.
+    // We keep engines separate, per your request.
+    console.warn("❌ Cloud TTS failed:", err);
   }
 }
+
+async function speakSynth(text, lang = "it-IT") {
+  // pure device engine
+  return webSpeechSpeak(text, lang);
+}
+
+// --- OPTIONAL: keep the old name as a thin router if you want ---
+// Now it routes strictly by current select value.
+async function speak(text, lang = "it-IT") {
+  const mode = document.getElementById("soundMode")?.value
+            || document.getElementById("soundMode-setup")?.value
+            || "none";
+  if (mode === "voice") return speakCloud(text, lang);
+  if (mode === "synth") return speakSynth(text, lang);
+  // no-op for other modes
+}
+
 
 
 async function tryGoogleTTS(text, lang) {
@@ -1620,6 +1604,19 @@ async function announceNextExercise(nextExercise) {
     { text: nextExercise.name, lang: detectLang(nextExercise.name) }
   ]);
 }
+
+
+async function announceNextExerciseWith(speakerFn, nextExercise) {
+  await speakerFn("prossimo esercizio:", "it-IT");
+  await speakerFn(nextExercise.name, detectLang(nextExercise.name));
+}
+
+// (optional) keep the old name for backward compatibility
+async function announceNextExercise(nextExercise) {
+  return announceNextExerciseWith(speak, nextExercise);
+}
+
+
 
 function warmUpServer() {
   fetch("https://google-tts-server.onrender.com")
