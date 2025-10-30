@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Workout App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -39,7 +40,7 @@
         <!-- INSTRUCTIONS SECTION (Collapsible) -->
         <div id="instructions-section" style="display: none;">
           <div class="instructions-header" id="instructions-header">
-            <span class="instructions-icon">📋</span>
+            <span class="instructions-icon"></span>
             <span class="instructions-title">ISTRUZIONI</span>
             <span class="collapse-icon" id="instructions-collapse-icon">▼</span>
           </div>
@@ -54,7 +55,7 @@
         <!-- MATERIALE SECTION -->
         <div id="materiale-section" style="display: none;">
           <div class="materiale-header">
-            <span class="materiale-icon">🏋️</span>
+            <span class="materiale-icon"></span>
             <span class="materiale-title">MATERIALE</span>
           </div>
           <div id="materiale-content" class="materiale-content">
@@ -70,7 +71,7 @@
 
         <!-- START POINT SELECTOR -->
         <div id="start-point-selector" style="display: none; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 2px solid rgba(255,215,0,0.3);">
-          <h3 style="color: #FFD700; margin-bottom: 15px; text-align: center; font-size: 16px;">🎯 Inizia da un blocco specifico</h3>
+          <h3 style="color: #FFD700; margin-bottom: 15px; text-align: center; font-size: 16px;"> Inizia da un blocco specifico</h3>
           
           <div style="display: grid; gap: 15px;">
             <div>
@@ -93,7 +94,7 @@
             </div>
 
             <button id="reset-start-point" style="padding: 8px 15px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid #666; border-radius: 8px; cursor: pointer; font-size: 13px;">
-              🔄 Reset a inizio workout
+               Reset a inizio workout
             </button>
           </div>
         </div>
@@ -108,7 +109,7 @@
           <select id="soundMode-setup">
             <option value="voice">Voice</option>
             <option value="synth">Synth (Device)</option>
-            <option value="beppe">Beppe</option>
+
             <option value="bip">Beep</option>
             <option value="none">Nessun suono</option>
           </select>
@@ -128,7 +129,8 @@
 
       <!-- STICKY BUTTONS AT BOTTOM -->
       <div id="bottom-buttons-container">
-        <button id="setup-settings-button" class="settings-btn">⚙️</button>
+        <button id="setup-settings-button" class="settings-btn" title="Impostazioni">⚙️</button>
+
         <button id="start-button-bottom" class="start-button" disabled>Start Workout</button>
       </div>
 
@@ -166,7 +168,7 @@
           <button id="prev-exercise-button" class="nav-btn" title="Esercizio precedente">⏮️</button>
           <button id="pause-button">⏸ Pausa</button>
           <button id="next-exercise-button" class="nav-btn" title="Esercizio successivo">⏭️</button>
-          <button id="settings-button" class="settings-btn">⚙️</button>
+          <button id="settings-button" class="settings-btn" title="Impostazioni">⚙️</button>
         </div>
 
         <!-- Settings Popup Overlay -->
@@ -175,13 +177,12 @@
             <h3>Impostazioni</h3>
             <label for="soundMode">Modalità audio:</label>
             <select id="soundMode">
-              <option value="beppe">Beppe</option>
               <option value="voice">Voice</option>
               <option value="synth">Synth (Device)</option>
               <option value="bip">Beep</option>
               <option value="none">Nessun suono</option>
             </select>
-            <button id="exit-workout-button" style="background: #e74c3c; margin-top: 15px;">🏠 Termina Allenamento</button>
+            <button id="exit-workout-button" style="background: #e74c3c; margin-top: 15px;"> Termina Allenamento</button>
             <button id="close-settings">Chiudi</button>
           </div>
         </div>
