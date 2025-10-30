@@ -18,6 +18,108 @@ document.body.appendChild(ttsAudio);
 window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 
+// --- Equipment parsing + consolidation -------------------------
+function normalizeIntensity(raw) {
+  const r = (raw || "").toLowerCase();
+  if (r.includes("legg")) return "Leggeri";
+  if (r.includes("medi")) return "Medi";
+  if (r.includes("medio")) return "Medi";
+  if (r.includes("pesant")) return "Pesanti";
+  return null;
+}
+
+function parseTipoDiPeso(s) {
+  // accepts: "2DB Medi", "2 DB MEDI", "1 KB Leggero", etc.
+  const m = (s || "").trim().match(/^(\d+)\s*([dk]b)\s*(.+)$/i);
+  if (!m) return null;
+  const count = parseInt(m[1], 10);
+  const family = m[2].toUpperCase();       // "DB" or "KB"
+  const intensity = normalizeIntensity(m[3]);
+  if (!count || (family !== "DB" && family !== "KB") || !intensity) return null;
+  return { count: Math.min(count, 2), family, intensity }; // cap at 2
+}
+
+function consolidateMateriale(exercises) {
+  // keep the highest count (2 over 1) per (family, intensity)
+  const best = new Map(); // key = "DB|KB|Leggeri|Medi|Pesanti" → count
+  for (const ex of exercises) {
+    if (!ex?.tipoDiPeso || !ex.block) continue;           // ignore non-workout rows
+    const p = parseTipoDiPeso(ex.tipoDiPeso);
+    if (!p) continue;
+    const key = `${p.family}|${p.intensity}`;
+    const prev = best.get(key) || 0;
+    if (p.count > prev) best.set(key, p.count);
+  }
+  // format back to strings like "2DB Leggeri", "2KB Medi", etc.
+  const out = [];
+  for (const [key, count] of best.entries()) {
+    const [family, intensity] = key.split("|");
+    out.push(`${count}${family} ${intensity}`);
+  }
+  // stable order: KB then DB, and Leggeri → Medi → Pesanti
+  const weightOrder = { Leggeri: 0, Medi: 1, Pesanti: 2 };
+  out.sort((a, b) => {
+    const [cA, famA, intA] = a.match(/^(\d)(DB|KB)\s+(.*)$/).slice(1);
+    const [cB, famB, intB] = b.match(/^(\d)(DB|KB)\s+(.*)$/).slice(1);
+    if (famA !== famB) return famA === "KB" ? -1 : 1;
+    if (weightOrder[intA] !== weightOrder[intB]) return weightOrder[intA] - weightOrder[intB];
+    return parseInt(cB,10) - parseInt(cA,10); // show 2 before 1 if ever equal family/intensity
+  });
+  return out;
+}
+
+
+// === INFO & TIME HELPERS ===
+function getSeconds(ex) {
+  // fullDuration > duration
+  const v = ex && (ex.fullDuration ?? ex.duration ?? 0);
+  return Number(v) || 0;
+}
+function fmtSecs(s) { return `${Math.max(0, Math.round(s))}S`; }
+
+function normalizePesoLabel(raw) {
+  if (!raw) return null;
+  // lascia invariati attrezzi non-DB
+  const isDB = /\b(?:db|dumbbell|dumbell|manubri)\b/i.test(raw);
+  if (!isDB) return String(raw).trim();
+
+  const s = String(raw).toUpperCase();
+  const two = /\b2\s*DB\b|\bDUE\b/.test(s);
+  const one = /\b1\s*DB\b|\bUNO\b|\bSINGOLO\s*DB\b/.test(s);
+
+  let level = '';
+  if (/\bPESANT/i.test(s) || /\bHEAVY\b/.test(s)) level = two ? 'PESANTI' : 'PESANTE';
+  else if (/\bMED/i.test(s))                       level = two ? 'MEDI'     : 'MEDIO';
+  else if (/\bLEGGER/i.test(s) || /\bLIGHT\b/.test(s)) level = two ? 'LEGGERI' : 'LEGGERO';
+
+  if (!one && !two) return String(raw).trim();
+  const count = two ? 2 : 1;
+  return `${count} DB ${level}`.trim();
+}
+
+function infoTriple(ex) {
+  const peso = normalizePesoLabel(ex?.tipoDiPeso);
+  const reps = ex?.reps ? `${ex.reps} REPS` : null;
+  const secs = getSeconds(ex) ? fmtSecs(getSeconds(ex)) : null;
+  return [peso, reps, secs].filter(Boolean);
+}
+
+function renderInfoRow(containerEl, ex) {
+  if (!containerEl) return;
+  containerEl.innerHTML = '';
+  containerEl.classList.add('info-row-3');
+  const parts = infoTriple(ex);
+  for (let i = 0; i < 3; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'info-cell';
+    cell.textContent = parts[i] || '';
+    containerEl.appendChild(cell);
+  }
+}
+
+
+
+
 // --- Synth voices lock ---
 const SYNTH_PREFS = {
   "it-IT": [
@@ -817,25 +919,25 @@ function updateWorkoutPreview() {
     instructionsText.style.display = "none";
   }
 
-  // === HANDLE MATERIALE (Unique equipment) ===
-  const uniqueMateriale = new Set();
-  workout.exercises.forEach(ex => {
-    if (ex.tipoDiPeso && ex.tipoDiPeso.trim() && ex.block) {
-      uniqueMateriale.add(ex.tipoDiPeso.trim());
-    }
-  });
+ // === HANDLE MATERIALE (consolidated equipment) ===
 
-  if (uniqueMateriale.size > 0) {
-    materialeSection.style.display = "block";
-    uniqueMateriale.forEach(item => {
-      const materialeItem = document.createElement('div');
-      materialeItem.className = 'materiale-item';
-      materialeItem.textContent = item;
-      materialeList.appendChild(materialeItem);
-    });
-  } else {
-    materialeSection.style.display = "none";
+if (materialeList) materialeList.innerHTML = "";
+
+const consolidated = consolidateMateriale(workout.exercises);
+
+if (consolidated.length > 0) {
+  if (materialeSection) materialeSection.style.display = "block";
+  for (const label of consolidated) {
+    const el = document.createElement("div");
+    el.className = "materiale-item";
+    el.textContent = label;        // e.g., "2DB Pesanti", "2DB Medi", "2DB Leggeri", "2KB Medi", etc.
+    materialeList.appendChild(el);
   }
+} else {
+  if (materialeSection) materialeSection.style.display = "none";
+}
+
+
 
   // Group exercises by block
   const sections = {
@@ -918,7 +1020,8 @@ function updateWorkoutPreview() {
       if (ex.tipoDiPeso) {
         const equipment = document.createElement("div");
         equipment.className = "exercise-equipment";
-        equipment.innerHTML = `<strong>🏋️</strong> ${ex.tipoDiPeso}`;
+        equipment.textContent = normalizePesoLabel(ex.tipoDiPeso);
+
         details.appendChild(equipment);
       }
 
@@ -928,6 +1031,15 @@ function updateWorkoutPreview() {
         reps.innerHTML = `<strong>Reps:</strong> ${ex.reps}`;
         details.appendChild(reps);
       }
+
+      const secs = getSeconds(ex);
+      if (secs) {
+        const dur = document.createElement("div");
+        dur.className = "exercise-duration";
+        dur.textContent = fmtSecs(secs);
+        details.appendChild(dur);
+      }
+
 
       card.appendChild(img);
       card.appendChild(name);
@@ -1216,9 +1328,19 @@ async function playExercise(index, exercises, resumeTime = null) {
     ? `<div style="font-size:16px;font-weight:600;margin-top:8px;color:#FFD700;">${infoText}</div>`
     : "";
 
-  document.getElementById("exercise-name").innerHTML = `<strong>${exercise.name}</strong>${currentInfo}`;
+  document.getElementById("exercise-name").innerHTML = `<strong>${exercise.name}</strong>`;
   document.getElementById("exercise-gif").src = exercise.imageUrl;
   document.getElementById("next-exercise-preview").style.display = "none";
+
+  // riga info corrente (nero)
+  let infoBar = document.getElementById('exercise-info');
+  if (!infoBar) {
+    infoBar = document.createElement('div');
+    infoBar.id = 'exercise-info';
+    document.getElementById('exercise-name').appendChild(infoBar);
+  }
+  renderInfoRow(infoBar, exercise);
+
 
   // cleanup visual cues
   const timerEl = document.getElementById("timer");
@@ -1228,11 +1350,11 @@ async function playExercise(index, exercises, resumeTime = null) {
   gifEl.classList.remove("gif-glow");
   exerciseNameBar.classList.remove("next-preview-active");
 
-  const duration = resumeTime !== null ? resumeTime : savedTimeLeft ?? parseInt(exercise.duration);
+  let timeLeftLocal = (resumeTime !== null ? resumeTime : (savedTimeLeft ?? getSeconds(exercise)));
   savedTimeLeft = null;
 
   // show first value immediately
-  timerEl.textContent = duration;
+  timerEl.textContent = timeLeftLocal;
 
   updateProgressBar();
 
@@ -1244,7 +1366,7 @@ async function playExercise(index, exercises, resumeTime = null) {
   if (useVoiceCloud) await speakCloud(exercise.name, detectLang(exercise.name));
   if (useVoiceSynth) await speakSynth(exercise.name, detectLang(exercise.name));
 
-  await startExerciseTimer(duration, exercise, nextExercise);
+  await startExerciseTimer(timeLeftLocal, exercise, nextExercise);
 }
 
 
@@ -1325,7 +1447,17 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
           : "";
 
         document.getElementById("exercise-name").innerHTML =
-          `<div style="font-size: 14px; opacity: 0.8; margin-bottom: 4px;">prossimo esercizio:</div><strong style="font-size: 18px;">${nextExercise.name}</strong>${nextInfo}`;
+          `<div style="font-size: 14px; opacity: 0.8; margin-bottom: 4px;">prossimo esercizio:</div>
+          <strong style="font-size: 18px;">${nextExercise.name}</strong>`;
+
+        let previewBar = document.getElementById('preview-info');
+        if (!previewBar) {
+          previewBar = document.createElement('div');
+          previewBar.id = 'preview-info';
+          document.getElementById('exercise-name').appendChild(previewBar);
+        }
+        renderInfoRow(previewBar, nextExercise);
+
         document.getElementById("exercise-gif").src = nextExercise.imageUrl;
 
         // --- VOICE PREVIEW UNIFORME ---
@@ -1397,6 +1529,9 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
       savedTimeLeft = null;
 
       setTimeout(() => playExercise(currentStep, fullWorkoutSequence), 300);
+      const prevBar = document.getElementById('preview-info');
+      if (prevBar) prevBar.remove();
+
     }
   }, 1000);
 }
