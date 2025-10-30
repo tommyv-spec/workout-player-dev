@@ -18,6 +18,52 @@ document.body.appendChild(ttsAudio);
 window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 
+// --- Synth voices lock ---
+const SYNTH_PREFS = {
+  "it-IT": [
+    "Siri Voice 4", "Siri Voice 3",        // iOS
+    "Google italiano",                      // Chrome
+    "Microsoft Elsa", "Microsoft Lucia"     // Edge
+  ],
+  "en-US": [
+    "Siri Voice 3", "Siri Voice 2",
+    "Google US English",
+    "Microsoft Aria", "Microsoft Jenny"
+  ]
+};
+
+const synthVoicesLocked = {};     // per lingua → voce scelta
+let __voicesReadyResolve;
+const voicesReady = new Promise(r => (__voicesReadyResolve = r));
+
+function pickVoice(lang) {
+  const all = speechSynthesis.getVoices();
+  // 1) prova preferite per nome
+  for (const name of (SYNTH_PREFS[lang] || [])) {
+    const v = all.find(v => v.lang.startsWith(lang) && v.name.includes(name));
+    if (v) return v;
+  }
+  // 2) qualsiasi voce della lingua
+  const sameLang = all.filter(v => v.lang.startsWith(lang));
+  if (sameLang.length) return sameLang[0];
+  // 3) ultima spiaggia: prima voce disponibile
+  return all[0] || null;
+}
+
+function lockSynthVoices() {
+  try {
+    synthVoicesLocked["it-IT"] = pickVoice("it-IT");
+    synthVoicesLocked["en-US"] = pickVoice("en-US");
+  } catch {}
+}
+
+// sblocca quando le voci sono pronte
+speechSynthesis.onvoiceschanged = () => {
+  lockSynthVoices();
+  __voicesReadyResolve?.();
+};
+
+
 // NEW: Full workout sequence (warm-up + main workout)
 let fullWorkoutSequence = [];
 
@@ -485,6 +531,9 @@ function startWorkout() {
 
 document.addEventListener("DOMContentLoaded", () => {
   warmUpServer();
+  // assicura voci cariche prima del primo speak()
+  speechSynthesis.getVoices(); // trigger load
+
 
   // iOS audio unlock  
   document.addEventListener("click", () => {
@@ -1279,15 +1328,19 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
           `<div style="font-size: 14px; opacity: 0.8; margin-bottom: 4px;">prossimo esercizio:</div><strong style="font-size: 18px;">${nextExercise.name}</strong>${nextInfo}`;
         document.getElementById("exercise-gif").src = nextExercise.imageUrl;
 
-        // voice preview
+        // --- VOICE PREVIEW UNIFORME ---
         if (mode === "beppe") {
           const urls = [beppeSounds.prossimo];
           if (nextExercise.audio) urls.push(nextExercise.audio);
           playBeppeAudioSequence(urls);
         } else if (useVoiceCloud) {
-          announceNextExerciseWith(speakCloud, nextExercise);
+          // Cloud: sempre it-IT per “prossimo esercizio” e nome
+          await speakCloud("prossimo esercizio:", "it-IT");
+          await speakCloud(nextExercise.name, "it-IT");
         } else if (useVoiceSynth) {
-          announceNextExerciseWith(speakSynth, nextExercise);
+          // Synth: stessa voce it-IT per tutto
+          await speakSynth("prossimo esercizio:", "it-IT");
+          await speakSynth(nextExercise.name, "it-IT");
         }
       }
 
@@ -1308,12 +1361,14 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
       timerEl.classList.add("warning-3");
     }
 
-    // 5s countdown
+    // 5s countdown (solo voce italiana)
     if (timeLeft === 5) {
       if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
       if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
       if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
     }
+
+
 
     // Next exercise
     if (timeLeft <= 0) {
@@ -1334,10 +1389,6 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
         const sequence = [];
         if (upcoming?.audioCambio) sequence.push(upcoming.audioCambio);
         if (sequence.length > 0) playBeppeAudioSequence(sequence);
-      } else if (useVoiceCloud && upcoming) {
-        speakCloud(upcoming.name, detectLang(upcoming.name));
-      } else if (useVoiceSynth && upcoming) {
-        speakSynth(upcoming.name, detectLang(upcoming.name));
       }
 
       if (useBip) playTransition();
@@ -1558,24 +1609,31 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function webSpeechSpeak(text, lang) {
   if (!("speechSynthesis" in window)) throw new Error("Web Speech not supported");
+  // aspetta che le voci siano disponibili (iOS/Chrome)
+  await voicesReady.catch(()=>{});
 
   return new Promise((resolve, reject) => {
     try {
       const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = lang || "it-IT";
-      utter.rate = 1.0; utter.pitch = 1.0; utter.volume = 1.0;
+      const locked = synthVoicesLocked[lang] || pickVoice(lang);
+      if (locked) utter.voice = locked;
+      utter.lang = locked?.lang || lang || "it-IT";
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      utter.volume = 1.0;
 
       utter.onend = resolve;
       utter.onerror = e => reject(new Error("WebSpeech error: " + (e?.error || "unknown")));
 
-      // Some browsers queue; cancel to keep it snappy
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
+      // evita sovrapposizioni e riassegnazioni di voce
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
     } catch (err) {
       reject(err);
     }
   });
 }
+
 
 function playBeep() {
   const el = document.getElementById("beep-sound");
