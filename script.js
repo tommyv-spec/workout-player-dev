@@ -18,6 +18,28 @@ document.body.appendChild(ttsAudio);
 window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 
+// put near your other TTS helpers
+async function speakSynthOnce(text, lang = "it-IT") {
+  if (!("speechSynthesis" in window)) throw new Error("Web Speech not supported");
+  await voicesReady.catch(()=>{});
+  return new Promise((resolve, reject) => {
+    try {
+      const utter = new SpeechSynthesisUtterance(text);
+      const locked = synthVoicesLocked[lang] || pickVoice(lang);
+      if (locked) utter.voice = locked;
+      utter.lang = locked?.lang || lang;
+      utter.rate = 1.0; utter.pitch = 1.0; utter.volume = 1.0;
+      utter.onend = resolve;
+      utter.onerror = e => reject(new Error("WebSpeech error: " + (e?.error || "unknown")));
+      // IMPORTANT: no speechSynthesis.cancel() here
+      speechSynthesis.speak(utter);
+    } catch (err) { reject(err); }
+  });
+}
+
+
+
+
 // --- Equipment parsing + consolidation -------------------------
 function normalizeIntensity(raw) {
   const r = (raw || "").toLowerCase();
@@ -1340,12 +1362,19 @@ async function playExercise(index, exercises, resumeTime = null) {
 
   // 🔁 read mode here (define the booleans you use)
   // start timer first
+  // determine the exercise duration safely
+  const duration =
+    exercise.fullDuration ||
+    exercise.duration ||
+    (exercise.time ? parseInt(exercise.time, 10) : 45); // default fallback
+
+  // start timer immediately (don’t wait for TTS)
   startExerciseTimer(duration, exercise, nextExercise);
 
-  // speak in parallel (don’t await)
+  // fire voice/synth in parallel (don’t await)
   const mode = document.getElementById("soundMode").value;
-  if (mode === "voice")  { speakCloud(exercise.name, detectLang(exercise.name)); }
-  if (mode === "synth")  { speakSynth(exercise.name, detectLang(exercise.name)); }
+  if (mode === "voice")  speakCloud(exercise.name, detectLang(exercise.name));
+  else if (mode === "synth")  speakSynth(exercise.name, detectLang(exercise.name));
 
 }
 
@@ -1364,6 +1393,8 @@ function resumeTimer() {
 
 async function startExerciseTimer(timeLeft, exercise, nextExercise) {
   clearInterval(interval);
+  let previewAnnounced = false; // ensures the 10s preview fires once per exercise
+
 
   interval = setInterval(async () => {
     if (isPaused) {
@@ -1441,17 +1472,31 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
         document.getElementById("exercise-gif").src = nextExercise.imageUrl;
 
         // --- VOICE PREVIEW UNIFORME ---
-        if (mode === "beppe") {
-          const urls = [beppeSounds.prossimo];
-          if (nextExercise.audio) urls.push(nextExercise.audio);
-          playBeppeAudioSequence(urls);
-        } else if (useVoiceCloud) {
-          speakCloud("prossimo esercizio:", "it-IT");
-          speakCloud(nextExercise.name, "it-IT");
-        } else if (useVoiceSynth) {
-          speakSynth("prossimo esercizio:", "it-IT");
-          speakSynth(nextExercise.name, "it-IT");
+        // 🔟 10-second preview (fire once, no awaits)
+        if (!previewAnnounced && timeLeft === 10 && nextExercise) {
+          previewAnnounced = true;
+
+          const mode = document.getElementById("soundMode").value;
+
+          if (mode === "voice") {
+            // Cloud TTS in sequence, slightly staggered
+            speakCloud("prossimo esercizio:", "it-IT");
+            setTimeout(() => speakCloud(nextExercise.name, "it-IT"), 350);
+          } else if (mode === "synth") {
+            // Web Speech in sequence, slightly staggered
+            speakSynthOnce(`prossimo esercizio: ${nextExercise.name}`, "it-IT");
+          } else if (mode === "beppe") {
+            // Your pre-recorded cue(s) — keep or customize
+            // e.g., play a cue + name via cloud/synth if you want
+            if (typeof playBeppeAudio === "function" && beppeSounds?.next10) {
+              playBeppeAudio(beppeSounds.next10);
+            }
+          } else if (mode === "bip") {
+            // Beep-only mode: give a clear cue without speech
+            if (typeof playBeep === "function") playBeep();
+          }
         }
+
 
       }
 
