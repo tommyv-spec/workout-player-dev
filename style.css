@@ -83,19 +83,22 @@ body::before {
 
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Staatliches', sans-serif;
   background: linear-gradient(to bottom, #1e1e1e, #3a2f1f);
   background-color: #1e1e1e !important; /* Force dark background */
   color: #fff;
+
   /* CRITICAL: Ensure background fills everything */
   min-height: 100vh;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+
   /* Safari iOS specific */
   -webkit-background-size: cover;
   background-size: cover;
   background-attachment: fixed;
 }
+
 
 header {
   text-align: center;
@@ -503,7 +506,7 @@ body:has(#exercise-container[style*="display: flex"]) #start-button-bottom {
   flex: 1;
   font-size: clamp(13px, 2.5vw, 15px);
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
 }
 
 .collapse-icon {
@@ -580,7 +583,7 @@ body:has(#exercise-container[style*="display: flex"]) #start-button-bottom {
   flex: 1;
   font-size: clamp(13px, 2.5vw, 15px);
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
 }
 
 .materiale-content {
@@ -625,7 +628,7 @@ body:has(#exercise-container[style*="display: flex"]) #start-button-bottom {
 }
 
 .materiale-item::before {
-  content: "•";
+  content: "";
   font-size: clamp(16px, 3vw, 18px);
 }
 
@@ -674,7 +677,7 @@ body:has(#exercise-container[style*="display: flex"]) #start-button-bottom {
 .section-title {
   font-size: clamp(13px, 2.5vw, 15px);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
   flex: 1;
 }
 
@@ -792,7 +795,7 @@ body:has(#exercise-container[style*="display: flex"]) #start-button-bottom {
   flex: 1;
   font-size: clamp(13px, 2.5vw, 15px);
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
 }
 
 .section-count {
@@ -1470,7 +1473,7 @@ audio {
   font-weight: 600;
   color: #FFD700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -1584,3 +1587,68 @@ body:has(#exercise-container[style*="display: flex"]) html {
   background: transparent !important;
   background-color: transparent !important;
 }
+
+/* LETTER-SPACING TUNING */
+body, button, select, label, .exercise-name, .section-title, .section-count {
+  letter-spacing: 0.15em;
+}
+
+h1, h2, h3, .settings-content h3, #workout-preview-title {
+  letter-spacing: 0.1em;
+}
+
+.start-button, #pause-button, #prev-exercise-button, #next-exercise-button, #settings-button, #setup-settings-button {
+  letter-spacing: 0.13em;
+}
+
+/* Ensure selects and option texts inherit spacing */
+select option { letter-spacing: inherit; }
+
+
+/* === Info line (peso, reps, durata) per corrente e prossimo === */
+.exercise-info-line{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:6px 0 2px;
+  font-size:16px;
+  letter-spacing:.06em;
+  width:100%;
+  max-width:min(600px,95vw);
+}
+.exercise-info-line .info-item{
+  flex:1 1 0;
+  text-align:center;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+/* Colori coerenti su barra nera (corrente) */
+#exercise-name .exercise-info-line .info-item{
+  color:#FFD700;
+}
+/* Colori coerenti su riquadro “prossimo esercizio” (giallo) */
+#exercise-name.next-preview-active .exercise-info-line .info-item{
+  color:#000;
+}
+
+.exercise-info-line {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 24px;
+  padding: 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  width: 100%;
+}
+
+.exercise-info-line .info-item {
+  flex: 1;
+  text-align: center;
+  color: #FFD700;
+}
+
+
