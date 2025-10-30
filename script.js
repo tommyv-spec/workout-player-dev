@@ -15,6 +15,8 @@ ttsAudio.setAttribute("playsinline", "");
 ttsAudio.setAttribute("webkit-playsinline", "");
 document.body.appendChild(ttsAudio);
 
+window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
 
 // NEW: Full workout sequence (warm-up + main workout)
 let fullWorkoutSequence = [];
@@ -1412,6 +1414,20 @@ const GOOGLE_TTS_URL = "https://google-tts-server.onrender.com/speak"; // keep y
 const TTS_TIMEOUT_MS = 9000;
 const TTS_RETRIES = 2; // retry Google TTS a couple of times before falling back
 
+async function safePlay(el) {
+  try {
+    // resume context first (needed for iOS)
+    if (window.__audioCtx && window.__audioCtx.state === "suspended") {
+      await window.__audioCtx.resume();
+    }
+    const p = el.play();
+    if (p && typeof p.then === "function") await p;
+  } catch (e) {
+    console.warn("🔇 iOS blocked playback:", e);
+  }
+}
+
+
 async function speak(text, lang = "it-IT") {
   try {
     await ensureAudioUnlocked(); // ✅ Force-unlock AudioContext first
@@ -1435,10 +1451,8 @@ async function speak(text, lang = "it-IT") {
     ttsAudio.setAttribute("playsinline", "");
     ttsAudio.setAttribute("webkit-playsinline", "");
 
-    await ttsAudio.play().catch((e) => {
-      console.warn("iOS playback failed:", e);
-      throw e;
-    });
+    await safePlay(ttsAudio);
+
 
     // Clean blob after playback
     ttsAudio.onended = () => {
