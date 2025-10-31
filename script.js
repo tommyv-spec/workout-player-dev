@@ -982,7 +982,18 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
   const getRemaining = () => Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
   let lastSecond = -1; // 🔒 run second-based actions once per displayed second
 
+  // 🔒 dedupe: ricorda i secondi già gestiti in QUESTO esercizio
+  const fired = new Set();
+
   interval = setInterval(async () => {
+    // Esegui una sola volta quando il timer mostra esattamente "sec"
+    function once(sec, cb) {
+      if (remaining === sec && !fired.has(sec)) {
+        fired.add(sec);
+        try { cb(); } catch (e) { console.warn('once('+sec+') error:', e); }
+      }
+    }
+
     // paused? save & stop the ticking loop
     if (isPaused) {
       savedTimeLeft = getRemaining();
@@ -1003,20 +1014,22 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
     if (remaining !== lastSecond) {
       lastSecond = remaining;
 
-      if (remaining === 60) {
+      once(60, () => {
         if (useVoiceCloud) speakCloud("mancano sessanta secondi", "it-IT");
         if (useVoiceSynth) speakSynth("mancano sessanta secondi", "it-IT");
         if (mode === "beppe") playBeppeAudio(beppeSounds.s60);
-      }
-      if (remaining === 30) {
+      });
+
+      once(30, () => {
         if (useVoiceCloud) speakCloud("mancano trenta secondi", "it-IT");
         if (useVoiceSynth) speakSynth("mancano trenta secondi", "it-IT");
         if (mode === "beppe") playBeppeAudio(beppeSounds.s30);
-      }
+      });
 
       // 10s preview (fire once per exercise)
-      if (remaining === 10 && !nextPreviewShown) {
-        nextPreviewShown = true;
+      once(10, async () => {
+        if (!nextPreviewShown) {
+          nextPreviewShown = true;
 
         timerEl.classList.add("warning-10");
         gifEl.classList.add("gif-glow");
@@ -1056,24 +1069,26 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
         }
 
         if (useBip) playBeep();
-      }
+        }
+      });
 
       // color changes
-      if (remaining === 6) {
+      once(6, () => {
         timerEl.classList.remove("warning-10");
         timerEl.classList.add("warning-6");
-      }
-      if (remaining === 3) {
+      });
+
+      once(3, () => {
         timerEl.classList.remove("warning-6");
         timerEl.classList.add("warning-3");
-      }
+      });
 
       // 5s countdown — runs once (no more stutter)
-      if (remaining === 5) {
+      once(5, () => {
         if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
         if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
         if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
-      }
+      });
     }
 
 
