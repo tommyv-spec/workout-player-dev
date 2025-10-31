@@ -1770,7 +1770,6 @@ main { max-width: min(600px, 95vw); margin: 0 auto; padding: 0 20px; background:
   height: var(--main-app-height-dvh);
   height: var(--main-app-height);
   overflow-y: auto; overflow-x: hidden; position: relative; -webkit-overflow-scrolling: touch;
-  padding-bottom: 0;
 }
 
 #setup-screen {
@@ -2173,21 +2172,6 @@ button:focus-visible,
 }
 
 
-#main-app{
-  /* …your other styles… */
-
-  height: var(--main-app-height-svh);
-  height: var(--main-app-height-dvh);
-  height: var(--main-app-height);
-
-  /* Prevent content from hiding behind the fixed bar */
-  padding-bottom: var(--bottom-button-total);
-
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
-  -webkit-overflow-scrolling: touch;
-}
 
 
 #bottom-buttons-container{
@@ -2206,13 +2190,6 @@ button:focus-visible,
 }
 
 
-/* ==== FORCE MAIN-APP TO STOP ABOVE THE FOOTER (LAST RULE WINS) ==== */
-
-
-#main-app{
-  /* height already calculated above; just ensure bottom space is always reserved */
-  padding-bottom: var(--bottom-bar-offset) !important;
-}
 
 /* Footer should size itself naturally; min-height keeps it tall enough */
 #bottom-buttons-container{
