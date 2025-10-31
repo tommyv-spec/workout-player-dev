@@ -421,19 +421,29 @@ async function webSpeechSpeak(text, lang) {
   utter.volume = 1.0;
 
   return new Promise((resolve, reject) => {
-    utter.onend = () => resolve();
-    utter.onerror = (e) => {
-      // ignore 'interrupted' (normal Android behavior)
-      if (e.error === "interrupted") return resolve();
-      reject(new Error("WebSpeech error: " + e.error));
+    let settled = false;
+    const finishOk = () => { if (!settled) { settled = true; resolve(); } };
+    const finishErr = (e) => {
+      if (!settled) {
+        settled = true;
+        // treat “interrupted” as success on Android
+        if (e && e.error === "interrupted") return resolve();
+        reject(new Error("WebSpeech error: " + (e?.error || e)));
+      }
     };
 
-    // Make sure queue is empty *before* speak (wait one tick)
+    // if Android never calls onend/onerror, bail out after 2.5s
+    const watchdog = setTimeout(finishOk, 2500);
+
+    utter.onend = () => { clearTimeout(watchdog); finishOk(); };
+    utter.onerror = (e) => { clearTimeout(watchdog); finishErr(e); };
+
     setTimeout(() => {
       try { speechSynthesis.speak(utter); }
-      catch (err) { reject(err); }
+      catch (err) { clearTimeout(watchdog); finishErr(err); }
     }, 60);
   });
+
 }
 
 
@@ -725,6 +735,9 @@ function startWorkout() {
 }
 
 async function playExercise(index, exercises, resumeTime = null) {
+  // reset the 10s preview trigger for this exercise
+  nextPreviewShown = false;
+
   if (index >= exercises.length) {
     document.getElementById("exercise-name").textContent = "Workout completato!";
     document.getElementById("exercise-gif").src = "";
@@ -816,10 +829,22 @@ async function playExercise(index, exercises, resumeTime = null) {
   const useVoiceCloud = mode === "voice";
   const useVoiceSynth = mode === "synth";
 
-  if (useVoiceCloud) await speakCloud(exercise.name, detectLang(exercise.name));
-  if (useVoiceSynth) await speakSynth(exercise.name, detectLang(exercise.name));
+  // start the countdown right away
+  startExerciseTimer(duration, exercise, nextExercise);
 
-  await startExerciseTimer(duration, exercise, nextExercise);
+  // say the exercise name without blocking the timer
+  const sayName = useVoiceCloud
+    ? () => speakCloud(exercise.name, detectLang(exercise.name))
+    : useVoiceSynth
+      ? () => speakSynth(exercise.name, detectLang(exercise.name))
+      : null;
+
+  if (sayName) {
+    // watchdog so a stuck synth on Android doesn’t freeze future calls
+    const guard = new Promise(res => setTimeout(res, 2500));
+    Promise.race([sayName(), guard]).catch(()=>{});
+  }
+
 }
 
 function resumeTimer() {
@@ -1401,6 +1426,8 @@ function buildStartPointSelector() {
 document.addEventListener("DOMContentLoaded", () => {
   warmUpServer();
   speechSynthesis.getVoices(); // trigger voices load
+  waitForVoices(1500).then(lockSynthVoices).catch(()=>{});
+
 
   preloadAudio(Object.values(beppeSounds));
   preloadWorkoutAudios();
