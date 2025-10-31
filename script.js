@@ -51,6 +51,11 @@ document.body.appendChild(ttsAudio);
 
 window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+
+let nextPreviewShown = false;   // controls the 10s preview (fires once per exercise)
+
+
+
 /* Pre-recorded (Beppe) player */
 let beppePlayer = new Audio();
 beppePlayer.preload = "auto";
@@ -728,7 +733,33 @@ async function playExercise(index, exercises, resumeTime = null) {
     ? `<div style="font-size:16px;font-weight:600;margin-top:8px;color:#FFD700;">${infoText}</div>`
     : "";
 
-  document.getElementById("exercise-name").innerHTML = `<strong>${exercise.name}</strong>${currentInfo}`;
+  // --- CURRENT EXERCISE DISPLAY ---
+  const hasDuration = exercise.duration && !exercise.isLabel;
+
+  const parts = [];
+  if (hasEquipment) parts.push(exercise.tipoDiPeso);
+  if (hasReps) parts.push(`${exercise.reps} REPS`);
+  if (hasDuration) parts.push(`${exercise.duration}S`);
+
+
+
+  // --- 10-SECOND PREVIEW DISPLAY ---
+  const hasNextReps = nextExercise.reps && !nextExercise.name.toLowerCase().includes("istruz");
+  const hasNextEquipment = nextExercise.tipoDiPeso && !nextExercise.name.toLowerCase().includes("istruz") && !nextExercise.isLabel;
+  const hasNextDuration = nextExercise.duration && !nextExercise.isLabel;
+
+  const partsNext = [];
+  if (hasNextEquipment) partsNext.push(nextExercise.tipoDiPeso);
+  if (hasNextReps) partsNext.push(`${nextExercise.reps} REPS`);
+  if (hasNextDuration) partsNext.push(`${nextExercise.duration}S`);
+  const infoNext = partsNext.join(" | ");
+
+  document.getElementById("exercise-name").innerHTML = `
+    <div style="font-size:22px;font-weight:800;letter-spacing:.5px;">${exercise.name}</div>
+    <div style="font-size:15px;font-weight:600;color:#FFD700;margin-top:4px;">${infoText}</div>
+  `;
+
+
   document.getElementById("exercise-gif").src = exercise.imageUrl;
   const nextPrev = document.getElementById("next-exercise-preview");
   if (nextPrev) nextPrev.style.display = "none";
@@ -758,74 +789,94 @@ async function playExercise(index, exercises, resumeTime = null) {
 
 function resumeTimer() {
   clearInterval(interval);
-  if (!savedTimeLeft || savedTimeLeft <= 0) {
-    savedTimeLeft = parseInt(document.getElementById("timer").textContent);
+
+  // if we didn't capture on pause, read what's on screen
+  if (savedTimeLeft == null || savedTimeLeft <= 0) {
+    const onScreen = parseInt(document.getElementById("timer").textContent, 10);
+    savedTimeLeft = Number.isFinite(onScreen) ? onScreen : 0;
   }
+
   const currentExercise = fullWorkoutSequence[currentStep];
   const nextExercise = fullWorkoutSequence[currentStep + 1];
+
+  isPaused = false;
   startExerciseTimer(savedTimeLeft, currentExercise, nextExercise);
 }
 
-async function startExerciseTimer(timeLeft, exercise, nextExercise) {
+
+async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
   clearInterval(interval);
 
+  const timerEl = document.getElementById("timer");
+  const gifEl = document.getElementById("exercise-gif");
+  const exerciseNameBar = document.getElementById("exercise-name");
+
+  // show immediately
+  timerEl.textContent = Math.max(0, Math.ceil(initialSeconds));
+
+  // set an absolute end time to avoid drift & off-by-one
+  const endAt = Date.now() + (initialSeconds * 1000);
+
+  // helper so pause stores the same value we display
+  const getRemaining = () => Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+
   interval = setInterval(async () => {
+    // paused? save & stop the ticking loop
     if (isPaused) {
-      savedTimeLeft = timeLeft;
+      savedTimeLeft = getRemaining();
       clearInterval(interval);
       return;
     }
 
-    timeLeft--;
-    document.getElementById("timer").textContent = timeLeft;
+    const remaining = getRemaining();
+    timerEl.textContent = remaining;
 
+    // read mode (kept separate)
     const mode = document.getElementById("soundMode").value;
     const useVoiceCloud = mode === "voice";
     const useVoiceSynth = mode === "synth";
     const useBip       = mode === "bip";
 
-    if (timeLeft === 60) {
+    // milestones
+    if (remaining === 60) {
       if (useVoiceCloud) speakCloud("mancano sessanta secondi", "it-IT");
       if (useVoiceSynth) speakSynth("mancano sessanta secondi", "it-IT");
       if (mode === "beppe") playBeppeAudio(beppeSounds.s60);
     }
-
-    if (timeLeft === 30) {
+    if (remaining === 30) {
       if (useVoiceCloud) speakCloud("mancano trenta secondi", "it-IT");
       if (useVoiceSynth) speakSynth("mancano trenta secondi", "it-IT");
       if (mode === "beppe") playBeppeAudio(beppeSounds.s30);
     }
 
-    if (timeLeft === 10) {
-      const timerEl = document.getElementById("timer");
-      const gifEl = document.getElementById("exercise-gif");
-      const exerciseNameBar = document.getElementById("exercise-name");
+    // 10s preview (fire once per exercise)
+    if (remaining === 10 && !nextPreviewShown) {
+      nextPreviewShown = true;
 
       timerEl.classList.add("warning-10");
       gifEl.classList.add("gif-glow");
       exerciseNameBar.classList.add("next-preview-active");
 
       if (nextExercise) {
-        const hasNextReps = nextExercise.reps && !nextExercise.name.toLowerCase().includes("istruz");
-        const hasNextEquipment = nextExercise.tipoDiPeso && !nextExercise.name.toLowerCase().includes("istruz") && !nextExercise.isLabel;
+        const nxHasReps = nextExercise.reps && !nextExercise.name.toLowerCase().includes("istruz");
+        const nxHasEqp  = nextExercise.tipoDiPeso && !nextExercise.name.toLowerCase().includes("istruz") && !nextExercise.isLabel;
+        const nxHasDur  = nextExercise.duration && !nextExercise.isLabel;
 
-        let nextInfoText = "";
-        if (hasNextReps && hasNextEquipment) {
-          nextInfoText = `${nextExercise.reps} reps | ${nextExercise.tipoDiPeso}`;
-        } else if (hasNextReps) {
-          nextInfoText = `${nextExercise.reps} reps`;
-        } else if (hasNextEquipment) {
-          nextInfoText = nextExercise.tipoDiPeso;
-        }
+        const nxParts = [];
+        if (nxHasEqp) nxParts.push(nextExercise.tipoDiPeso);
+        if (nxHasReps) nxParts.push(`${nextExercise.reps} REPS`);
+        if (nxHasDur) nxParts.push(`${nextExercise.duration}S`);
+        const nxInfo = nxParts.join(" | ");
 
-        const nextInfo = nextInfoText
-          ? `<div style="font-size: 14px; font-weight: 600; margin-top: 4px;">${nextInfoText}</div>`
-          : "";
-
-        document.getElementById("exercise-name").innerHTML =
-          `<div style="font-size: 14px; opacity: 0.8; margin-bottom: 4px;">prossimo esercizio:</div><strong style="font-size: 18px;">${nextExercise.name}</strong>${nextInfo}`;
+        // swap preview UI
+        document.getElementById("exercise-name").innerHTML = `
+          <div style="font-size:14px;opacity:.8;margin-bottom:4px;">PROSSIMO ESERCIZIO:</div>
+          <div style="font-size:22px;font-weight:800;letter-spacing:.5px;">${nextExercise.name}</div>
+          <div style="font-size:15px;font-weight:600;margin-top:4px;">${nxInfo}</div>
+        `;
         document.getElementById("exercise-gif").src = nextExercise.imageUrl;
 
+        // preview voice strictly per mode
         if (mode === "beppe") {
           const urls = [beppeSounds.prossimo];
           if (nextExercise.audio) urls.push(nextExercise.audio);
@@ -842,30 +893,28 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
       if (useBip) playBeep();
     }
 
-    if (timeLeft === 6) {
-      const timerEl = document.getElementById("timer");
+    // color changes
+    if (remaining === 6) {
       timerEl.classList.remove("warning-10");
       timerEl.classList.add("warning-6");
     }
-
-    if (timeLeft === 3) {
-      const timerEl = document.getElementById("timer");
+    if (remaining === 3) {
       timerEl.classList.remove("warning-6");
       timerEl.classList.add("warning-3");
     }
 
-    if (timeLeft === 5) {
+    // 5s countdown
+    if (remaining === 5) {
       if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
       if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
       if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
     }
 
-    if (timeLeft <= 0) {
+    // done → next
+    if (remaining <= 0) {
       clearInterval(interval);
 
-      const timerEl = document.getElementById("timer");
-      const gifEl = document.getElementById("exercise-gif");
-      const exerciseNameBar = document.getElementById("exercise-name");
+      // cleanup visuals
       timerEl.classList.remove("warning-10", "warning-6", "warning-3");
       gifEl.classList.remove("gif-glow");
       exerciseNameBar.classList.remove("next-preview-active");
@@ -873,22 +922,22 @@ async function startExerciseTimer(timeLeft, exercise, nextExercise) {
       currentStep++;
       const upcoming = fullWorkoutSequence[currentStep];
 
+      // change cue
       if (mode === "beppe") {
-        const sequence = [];
-        if (upcoming?.audioCambio) sequence.push(upcoming.audioCambio);
-        if (sequence.length > 0) playBeppeAudioSequence(sequence);
+        const seq = [];
+        if (upcoming?.audioCambio) seq.push(upcoming.audioCambio);
+        if (seq.length) playBeppeAudioSequence(seq);
       }
-
       if (useBip) playTransition();
 
-      const nextPrev = document.getElementById("next-exercise-preview");
-      if (nextPrev) nextPrev.style.display = "none";
+      document.getElementById("next-exercise-preview").style.display = "none";
       savedTimeLeft = null;
 
       setTimeout(() => playExercise(currentStep, fullWorkoutSequence), 300);
     }
-  }, 1000);
+  }, 200); // 5× per second → smooth and exact
 }
+
 
 /* -------------------- UI / App Wiring -------------------- */
 function login() {
@@ -1074,9 +1123,9 @@ function updateWorkoutPreview() {
 
   const grid = document.getElementById("exercise-grid");
   const sectionConfigs = [
-    { key: 'blocco1', title: 'BLOCCO 1', color: '#27AE60', icon: '💪' },
-    { key: 'blocco2', title: 'BLOCCO 2', color: '#27AE60', icon: '💪' },
-    { key: 'blocco3', title: 'BLOCCO 3', color: '#27AE60', icon: '💪' }
+    { key: 'blocco1', title: 'BLOCCO 1', color: '#27AE60', icon: '' },
+    { key: 'blocco2', title: 'BLOCCO 2', color: '#27AE60', icon: '' },
+    { key: 'blocco3', title: 'BLOCCO 3', color: '#27AE60', icon: '' }
   ];
 
   sectionConfigs.forEach(config => {
@@ -1125,7 +1174,7 @@ function updateWorkoutPreview() {
       if (ex.tipoDiPeso) {
         const equipment = document.createElement("div");
         equipment.className = "exercise-equipment";
-        equipment.innerHTML = `<strong>🏋️</strong> ${ex.tipoDiPeso}`;
+        equipment.innerHTML = `${ex.tipoDiPeso}`;
         details.appendChild(equipment);
       }
       if (ex.reps) {
@@ -1364,19 +1413,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const bottomStart = document.getElementById("start-button-bottom");
   if (bottomStart) bottomStart.addEventListener("click", startWorkout);
 
-  const pauseBtn = document.getElementById("pause-button");
-  if (pauseBtn) {
-    pauseBtn.addEventListener("click", () => {
-      isPaused = !isPaused;
-      if (isPaused) {
-        clearInterval(interval);
-        pauseBtn.textContent = "▶️ Riprendi";
-      } else {
-        pauseBtn.textContent = "⏸ Pausa";
-        resumeTimer();
-      }
-    });
-  }
+  const pauseBtn = document.getElementById("pause-button").addEventListener("click", () => {
+    isPaused = !isPaused;
+    const btn = document.getElementById("pause-button");
+    if (isPaused) {
+      btn.textContent = "▶️ Riprendi";
+      // the loop will capture savedTimeLeft and stop itself
+    } else {
+      btn.textContent = "⏸ Pausa";
+      resumeTimer();
+    }
+  });
+
 
   const prevBtn = document.getElementById("prev-exercise-button");
   if (prevBtn) {
