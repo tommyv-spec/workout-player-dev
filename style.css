@@ -1652,3 +1652,508 @@ select option { letter-spacing: inherit; }
 }
 
 
+/* ====== CSS VARIABLES FOR DYNAMIC LAYOUT ====== */
+:root {
+  /* Heights for precise calculation - adapts to ANY screen */
+  --header-height: 13vh;
+  --bottom-button-height: 8vh;
+  
+  /* Safe areas */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  
+  /* Calculated available height for main-app */
+  --main-app-height: calc(100vh - var(--header-height) - var(--bottom-button-height));
+  --main-app-height-dvh: calc(100dvh - var(--header-height) - var(--bottom-button-height));
+}
+
+/* ====== RESET BASE ====== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  height: 100dvh;
+  height: 100svh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: none;
+}
+
+/* Default (will be overridden by theme) */
+html { background: #1e1e1e; }
+body {
+  font-family: 'Staatliches', sans-serif;
+  background: #1e1e1e;
+  color: #fff;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  -webkit-background-size: cover;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+header {
+  text-align: center;
+  padding: 1% 0;
+  height: var(--header-height);
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-sizing: border-box;
+}
+
+header img { height: 60%; width: auto; max-width: 70vw; border-radius: 8px; }
+header h1 { margin-top: 2%; font-size: clamp(0.9rem, 3vw, 1.2rem); color: #fff; }
+
+main { max-width: min(600px, 95vw); margin: 0 auto; padding: 0 20px; background: transparent; position: relative; z-index: 1; }
+
+/* ====== LOGIN SCREEN ====== */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  height: calc(100vh - 100px);
+  padding: clamp(12px, 2.5vw, 15px);
+  background: transparent; position: relative;
+}
+
+.login-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: clamp(12px, 2.5vw, 16px);
+  padding: clamp(20px, 4vw, 30px) clamp(15px, 3vw, 20px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+  text-align: center;
+  width: 100%;
+  max-width: min(340px, 85vw);
+  transition: all 0.3s ease;
+  margin: auto;
+}
+
+.login-card h1 { font-size: clamp(17px, 3.5vw, 20px); font-weight: 700; color: #ffffff; margin-bottom: 10px; letter-spacing: 1px; }
+.login-card h3 { font-size: clamp(14px, 2.8vw, 16px); color: #dddddd; margin-bottom: clamp(15px, 3vw, 20px); font-weight: 500; }
+
+.login-card input[type="text"],
+.login-card input[type="password"] {
+  width: 100%;
+  padding: clamp(10px, 2vw, 12px) clamp(12px, 2.3vw, 14px);
+  margin-bottom: clamp(12px, 2.5vw, 15px);
+  border: none; border-radius: 8px;
+  background-color: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: clamp(13px, 2.5vw, 15px);
+  outline: none; transition: background 0.2s ease;
+}
+.login-card input::placeholder { color: #ccc; }
+
+.login-card button {
+  width: 100%; padding: clamp(10px, 2vw, 12px);
+  background: #2b2b2e; color: white; font-size: clamp(14px, 2.8vw, 16px);
+  font-weight: bold; border: none; border-radius: 8px; cursor: pointer;
+  transition: background 0.3s, transform 0.2s, box-shadow .2s;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+}
+.login-card button:hover { background: #343438; transform: translateY(-1px); }
+
+/* ====== SETUP SCREEN ====== */
+#main-app {
+  background: transparent;
+  height: var(--main-app-height-dvh);
+  height: var(--main-app-height);
+  overflow-y: auto; overflow-x: hidden; position: relative; -webkit-overflow-scrolling: touch;
+  padding-bottom: 0;
+}
+
+#setup-screen {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  border-radius: clamp(16px, 3vw, 20px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  padding: clamp(18px, 3.5vw, 25px) clamp(15px, 3vw, 20px);
+  margin: 20px auto; max-width: min(420px, 90vw); color: #fff; text-align: center;
+}
+
+#setup-screen h2 {
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 800; color: #f3f3f4;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: clamp(18px, 3.5vw, 25px);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+#setup-screen label {
+  font-weight: 700; margin-top: 20px; margin-bottom: 10px; width: 100%; max-width: min(340px, 85vw);
+  text-align: center; font-size: clamp(14px, 2.8vw, 16px); color: #fff; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+#setup-screen select,
+#topbar-select select,
+.settings-content select,
+.audio-setup-wrapper select,
+.audio-workout-wrapper select {
+  width: 100%; max-width: min(340px, 85vw);
+  padding: 14px 16px; font-size: clamp(14px, 2.8vw, 16px);
+  font-weight: 600; border-radius: clamp(10px, 2vw, 12px);
+  background: #1f2024; color: #f2f2f3; border: 1px solid #2e3036;
+  margin-bottom: 10px; transition: all 0.2s ease; cursor: pointer; text-align: center;
+}
+#setup-screen select:hover { background: #232429; border-color: #3a3c44; transform: translateY(-1px); }
+
+.start-button { background: #222326; color: white; font-weight: 700; padding: 14px 24px; font-size: clamp(16px, 3vw, 18px); border-radius: 10px; border: 1px solid #2f3036; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transition: all 0.2s ease; }
+.start-button:hover:not(:disabled) { background: #2b2c30; transform: translateY(-2px); }
+.start-button:disabled { opacity: .5; cursor: not-allowed; }
+
+#bottom-buttons-container {
+  position: fixed; bottom: 0; left: 0; right: 0; width: 100%;
+  height: var(--bottom-button-height);
+  display: flex; gap: 1%; align-items: center; justify-content: center; z-index: 9999;
+  padding: 12px 20px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 80%, transparent 100%);
+  backdrop-filter: blur(10px);
+}
+
+#start-button-bottom {
+  flex: 1; max-width: min(400px, 90vw); height: 65%;
+  padding: 0 5%; font-size: clamp(0.9rem, 2.5vw, 1.1rem); font-weight: 700;
+  background: #222326; color: #fff; border: 1px solid #2f3036; border-radius: 8px;
+  cursor: pointer; transition: all .2s ease; display: flex; align-items: center; justify-content: center;
+}
+#start-button-bottom:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.45); background:#2b2c30; }
+
+#bottom-buttons-container .settings-btn {
+  height: 65%; aspect-ratio: 1; font-size: clamp(1rem, 3vw, 1.3rem);
+  background:#1c1d20; color:#f2f2f3; border:1px solid #2a2c31; border-radius:8px; box-shadow:0 6px 16px rgba(0,0,0,.35);
+}
+
+#logout-button { align-self: flex-end; margin-bottom: clamp(15px,3vw,20px); background: #1f2024; border: 1px solid #2d2f35; padding: 8px 16px; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; transition: background .2s; }
+#logout-button:hover { background:#25262b; }
+
+/* ====== PREVIEW / INSTRUCTIONS / MATERIALE ====== */
+#workout-preview { display: block !important; margin-top: 30px; width: 100%; max-width: min(340px,85vw); }
+#workout-preview h3 { font-size: clamp(16px, 3vw, 18px); font-weight: 700; color: #fff; text-align: center; margin-bottom: clamp(12px, 2.5vw, 15px); text-transform: uppercase; letter-spacing: .5px; }
+
+#instructions-section { width:100%; max-width:min(340px,85vw); margin:20px auto; background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius: clamp(10px,2vw,12px); overflow:hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+.instructions-header { padding: clamp(10px,2vw,12px) clamp(12px,2.5vw,16px); display:flex; align-items:center; gap: clamp(8px,1.5vw,10px); background: linear-gradient(135deg,#2a2b2f,#1f2024); color:#f2f2f3; cursor:pointer; user-select:none; transition: filter .2s; }
+.instructions-header:hover { filter: brightness(1.05); }
+.instructions-icon { font-size: clamp(17px,3.5vw,20px); }
+.instructions-title { flex:1; font-size: clamp(13px,2.5vw,15px); font-weight:700; letter-spacing:1.5px; }
+.collapse-icon { font-size: clamp(12px,2.3vw,14px); transition: transform .3s; }
+.instructions-header.collapsed .collapse-icon { transform: rotate(-90deg); }
+.instructions-content { max-height: min(500px,60vh); overflow: hidden; transition: max-height .3s ease-out; }
+.instructions-content.collapsed { max-height: 0; }
+#instructions-box { background:#f7f7f8; padding: clamp(14px,2.8vw,18px) clamp(15px,3vw,20px); font-size: clamp(13px,2.5vw,15px); color:#1a1a1b; text-align:left; line-height:1.6; }
+#instructions-text { margin:0; color:#1a1a1b; }
+#instructions-image { width:100%; height:auto; border-radius:8px; margin-top:10px; }
+
+#materiale-section { width:100%; max-width:min(600px,95vw); margin:20px auto; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: clamp(10px,2vw,12px); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+.materiale-header { padding: clamp(10px,2vw,12px) clamp(12px,2.5vw,16px); display:flex; align-items:center; gap: clamp(8px,1.5vw,10px); background: linear-gradient(135deg,#2a2b2f,#1f2024); color:#f2f2f3; }
+.materiale-content { background:#f7f7f8; padding: clamp(12px,2.5vw,16px); }
+#materiale-list { display:grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: clamp(8px,1.5vw,10px); justify-items:center; }
+.materiale-item { background: #2b2c30; color: #f1f1f2; padding:10px 16px; border-radius: clamp(16px,3vw,20px); font-size: clamp(12px,2.3vw,14px); font-weight:600; box-shadow: 0 2px 8px rgba(0,0,0,.25); width:100%; max-width:min(160px,75vw); white-space:nowrap; }
+
+#exercise-visuals { display:block !important; width:100%; max-width:min(340px,85vw); margin-top: clamp(18px,3.5vw,25px); margin-bottom: clamp(18px,3.5vw,25px); }
+
+#exercise-grid { display:flex; flex-direction:column; gap: clamp(15px,3vw,20px); width:100%; }
+
+.workout-section { width:100%; background: rgba(255,255,255,0.04); border-radius: clamp(12px,2.3vw,14px); overflow:hidden; border:1px solid rgba(255,255,255,0.08); box-shadow: 0 2px 8px rgba(0,0,0,.2); margin-bottom: clamp(12px,2.5vw,16px); }
+.section-header { padding: clamp(10px,2vw,12px) clamp(12px,2.5vw,16px); display:flex; align-items:center; justify-content:space-between; color:#f2f2f3; font-weight:700; gap:8px; background: #1f2024; }
+.section-icon { font-size: clamp(17px,3.5vw,20px); flex-shrink: 0; }
+.section-title { font-size: clamp(13px,2.5vw,15px); text-transform: uppercase; letter-spacing: 1.5px; flex:1; }
+.section-count { font-size: clamp(11px,2.2vw,13px); background: rgba(255,255,255,0.12); padding: 4px 10px; border-radius: clamp(10px,2vw,12px); font-weight:600; }
+
+.section-cards-grid { display:grid; grid-template-columns: 1fr 1fr; gap: clamp(8px,2vw,12px); padding: clamp(10px,2vw,12px); background: rgba(0,0,0,0.08); }
+.exercise-card { background:#fbfbfc; padding:10px; border-radius: clamp(10px,2vw,12px); color:#111; box-shadow: 0 2px 8px rgba(0,0,0,.12); text-align:center; border: 1px solid #e5e5e7; transition: all .2s ease; display:flex; flex-direction:column; min-height:140px; }
+.exercise-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.exercise-card img { width:100%; object-fit:cover; object-position:center; border-radius:8px; margin-bottom:8px; border:1px solid rgba(0,0,0,0.08); flex-shrink:0; clip-path: inset(3% 0 3% 0); }
+.exercise-name { font-weight:700; font-size: clamp(10px,2vw,12px); color:#222; line-height:1.3; margin-top:8px; text-align:center; min-height:30px; display:flex; align-items:center; justify-content:center; }
+.exercise-details { display:flex; flex-direction:column; gap:4px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(0,0,0,0.08); }
+.exercise-equipment,.exercise-reps { font-size: clamp(9px,1.8vw,11px); color:#666; display:flex; align-items:center; justify-content:center; gap:4px; }
+
+/* ====== WORKOUT SESSION ====== */
+#exercise-container { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; height:100dvh; max-height:100dvh; padding: max(0.5vh, env(safe-area-inset-top)) clamp(8px,2vw,10px) max(0.5vh, env(safe-area-inset-bottom)) clamp(8px,2vw,10px); gap: clamp(2px,0.5vh,4px); position: fixed; top:0; left:0; right:0; bottom:0; overflow:hidden !important; text-align:center; }
+body:has(#exercise-container[style*="display: flex"]) { overflow:hidden !important; position: fixed; width:100%; height:100%; }
+
+#timer.full-timer { display:block; font-size: clamp(2.5rem, 8vw, 3.8rem); font-weight: bold; color:#e8e8ea; text-align:center; z-index:2; line-height:1; margin:0; padding: clamp(4px,1vh,8px) clamp(8px,2vw,10px); width:100%; }
+
+#exercise-name { font-size: clamp(15px,4vw,18px); font-weight:bold; color:#fff; margin: 0 clamp(8px,2vw,10px) clamp(2px,0.5vh,4px) clamp(8px,2vw,10px); line-height:1.2; min-height: clamp(42px,8vh,48px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding: clamp(6px,1.5vh,8px) clamp(10px,2.5vw,14px); background: rgba(0,0,0,.85); backdrop-filter: blur(10px); border-radius:10px; box-shadow: 0 4px 16px rgba(0,0,0,.45); width: clamp(calc(100% - 16px), 95%, calc(100% - 20px)); max-width: min(600px,95vw); }
+
+#exercise-gif,
+#next-exercise-gif {
+  width: min(85vw, 75vh); max-width: 90vw; aspect-ratio: 9/16; height:auto;
+  object-fit: cover; object-position: center; display:block; margin:0 auto;
+  border-radius: clamp(10px,2vw,12px); box-shadow: 0 4px 20px rgba(0,0,0,.35);
+  clip-path: inset(5% 0 5% 0); flex-shrink: 0;
+}
+
+#controls-container { display:flex; justify-content:center; align-items:center; gap: clamp(6px,2vw,12px); padding: clamp(6px,1.5vh,8px) clamp(8px,2vw,10px); padding-bottom: max(clamp(6px,1.5vh,8px), env(safe-area-inset-bottom, 8px)); width:100%; }
+#pause-button,.settings-btn,.nav-btn { padding: clamp(7px,2vh,10px) clamp(12px,3vw,20px); font-size: clamp(13px,3.5vw,16px); font-weight:bold; border:none; border-radius:8px; background:#1c1d20; color:#f2f2f3; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,.3); transition: all .2s ease; border:1px solid #2a2c31;}
+#pause-button:hover,.settings-btn:hover,.nav-btn:hover { background:#232429; transform: translateY(-2px); }
+.nav-btn { font-size: clamp(15px,4vw,18px); padding: clamp(7px,2vh,10px) clamp(10px,2.5vw,15px); background:#1c1d20; border:1px solid #2a2c31; }
+
+#settings-popup, #setup-settings-popup { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index:10000; display:flex; align-items:center; justify-content:center; }
+.settings-content { background: linear-gradient(135deg,#222326,#1b1c1f); padding: clamp(20px,4vw,30px); border-radius: clamp(12px,2.5vw,16px); box-shadow: 0 8px 32px rgba(0,0,0,.5); text-align:center; min-width: 300px; border: 1px solid #2e3036; }
+.settings-content h3 { color:#e9e9ea; font-size: clamp(20px,4.5vw,24px); margin-bottom: clamp(15px,3vw,20px); text-transform: uppercase; letter-spacing: 1px; }
+#close-settings,#close-setup-settings,#exit-workout-button,#logout-button {
+  width:100%; padding: clamp(10px,2vw,12px); color:#fff; font-size: clamp(14px,2.8vw,16px); font-weight:bold; border:none; border-radius:8px; cursor:pointer; transition: all .2s ease; margin-top:10px;
+}
+#close-settings,#close-setup-settings { background:#2b2c30; border:1px solid #2f3036; }
+#exit-workout-button { background:#2a2a2d; border:1px solid #34353a; }
+
+/* ====== PROGRESS BAR ====== */
+#workout-progress-container { width:100%; padding-top: max(12px, env(safe-area-inset-top, 12px)); padding-left: clamp(12px,2.5vw,16px); padding-right:16px; padding-bottom:8px; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.12); flex-shrink:0; z-index:100; }
+#progress-bar-wrapper { margin-bottom: 8px; }
+#progress-bar { position:relative; width:100%; height: clamp(20px,3.5vh,24px); background: rgba(255,255,255,0.10); border-radius: clamp(10px,2vw,12px); overflow:hidden; border: 1px solid rgba(255,255,255,0.18); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+#progress-fill { position:absolute; left:0; top:0; height:100%; background: linear-gradient(90deg,#e6e6e8,#c8c9cd); border-radius: clamp(10px,2vw,12px); transition: width .5s ease; box-shadow: 0 0 10px rgba(255,255,255,0.25); }
+#progress-percentage { position:absolute; left:50%; top:50%; transform: translate(-50%,-50%); font-size: clamp(10px,2vw,12px); font-weight:700; color:#f2f2f3; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+#progress-info { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+#progress-info span { font-size: clamp(9px,1.8vw,11px); font-weight:600; color:#d6d6d8; text-transform: uppercase; letter-spacing: 1.5px; white-space:nowrap; }
+
+/* ====== VISUAL CUES (Monochrome) ====== */
+#exercise-name.next-preview-active {
+  background: linear-gradient(135deg, #ffffff, #f1f1f3) !important;
+  border: 3px solid #e5e5e7 !important;
+  box-shadow: 0 8px 32px rgba(255,255,255,0.25), 0 0 60px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.6) !important;
+  animation: barPulse 2s ease-in-out infinite !important;
+  color: #000 !important;
+}
+#exercise-name.next-preview-active div { color:#111 !important; text-shadow:none !important; }
+
+@keyframes barPulse { 0%,100%{transform:scale(1);box-shadow:0 8px 32px rgba(255,255,255,0.25),0 0 60px rgba(255,255,255,0.15);} 50%{transform:scale(1.02);box-shadow:0 10px 40px rgba(255,255,255,0.35),0 0 80px rgba(255,255,255,0.25);} }
+
+#timer.full-timer.warning-10 { color:#f1f1f3; text-shadow: 0 0 24px rgba(255,255,255,.45); animation: timerGlow 1s ease-in-out infinite; }
+#timer.full-timer.warning-6  { color:#fafafa; text-shadow: 0 0 28px rgba(255,255,255,.55); animation: timerGlow .8s ease-in-out infinite; }
+#timer.full-timer.warning-3  { color:#ffffff; text-shadow: 0 0 32px rgba(255,255,255,.7);  animation: timerGlow .6s ease-in-out infinite; }
+@keyframes timerGlow { 0%,100%{opacity:1} 50%{opacity:.85} }
+
+#exercise-gif.gif-glow {
+  border: 4px solid #ffffff;
+  box-shadow: 0 0 30px rgba(255,255,255,0.35), 0 0 60px rgba(255,255,255,0.2), 0 4px 20px rgba(0,0,0,0.35);
+  animation: gifPulse 2s ease-in-out infinite;
+}
+@keyframes gifPulse { 0%,100%{border-color:#ffffff;box-shadow:0 0 30px rgba(255,255,255,0.35),0 0 60px rgba(255,255,255,0.2),0 4px 20px rgba(0,0,0,0.35);} 50%{border-color:#f2f2f4;box-shadow:0 0 40px rgba(255,255,255,0.5),0 0 80px rgba(255,255,255,0.35),0 6px 25px rgba(0,0,0,0.4);} }
+
+/* ====== VIEWPORT & UTILS ====== */
+@supports (height: 100dvh) { #exercise-container { height: 100dvh !important; } }
+@supports (height: -webkit-fill-available) { #exercise-container { height: -webkit-fill-available !important; } }
+body:has(#exercise-container[style*="display: flex"]), body:has(#exercise-container[style*="display: flex"]) html { overflow:hidden !important; position:fixed !important; width:100% !important; height:100% !important; overscroll-behavior:none !important; }
+
+/* Letter spacing kept */
+body, button, select, label, .exercise-name, .section-title, .section-count { letter-spacing: .15em; }
+h1, h2, h3, .settings-content h3, #workout-preview-title { letter-spacing: .1em; }
+.start-button, #pause-button, #prev-exercise-button, #next-exercise-button, #settings-button, #setup-settings-button { letter-spacing: .13em; }
+select option { letter-spacing: inherit; }
+
+
+/* =========================
+   MONOCHROME BUTTON SYSTEM
+   (drop-in override)
+   ========================= */
+:root{
+  --btn-bg: #171717;           /* base */
+  --btn-bg-hover: #1f1f1f;
+  --btn-bg-active: #141414;
+  --btn-text: #f4f4f5;
+  --btn-border: #2b2b2b;
+  --btn-shadow: 0 6px 14px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.05);
+  --btn-shadow-hover: 0 8px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+
+  /* secondary */
+  --btn-sec-bg: #0f0f10;
+  --btn-sec-border: #2a2a2e;
+
+  /* danger */
+  --btn-danger-bg: #2a1b1b;
+  --btn-danger-border: #3a2828;
+
+  /* disabled */
+  --btn-disabled-bg: #1a1a1a;
+  --btn-disabled-text: #9b9ba1;
+  --btn-disabled-border: #262626;
+
+  /* focus ring */
+  --ring: 0 0 0 3px rgba(255,255,255,.10);
+}
+
+/* Base look for all app buttons (no HTML change needed) */
+button,
+.start-button,
+#start-button-bottom,
+#pause-button,
+.nav-btn,
+.settings-btn,
+#close-settings,
+#close-setup-settings,
+#exit-workout-button,
+#logout-button,
+#login-button {
+  appearance: none;
+  border-radius: 10px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  box-shadow: var(--btn-shadow);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .15s ease, transform .06s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+/* Sizes keep what you already had; we just normalize the look */
+#start-button-bottom,
+.start-button {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+}
+#start-button-bottom:hover,
+.start-button:hover,
+button:hover,
+.nav-btn:hover,
+.settings-btn:hover,
+#pause-button:hover,
+#close-settings:hover,
+#close-setup-settings:hover,
+#logout-button:hover {
+  background: var(--btn-bg-hover);
+  box-shadow: var(--btn-shadow-hover);
+  transform: translateY(-1px);
+}
+#start-button-bottom:active,
+.start-button:active,
+button:active,
+.nav-btn:active,
+.settings-btn:active,
+#pause-button:active,
+#close-settings:active,
+#close-setup-settings:active,
+#logout-button:active {
+  background: var(--btn-bg-active);
+  transform: translateY(0);
+}
+
+/* Secondary (nav + settings + pause) = outlined/stealth, but still “buttony” */
+.nav-btn,
+.settings-btn,
+#pause-button {
+  background: var(--btn-sec-bg);
+  border-color: var(--btn-sec-border);
+}
+
+/* Danger actions (exit/logout) */
+#exit-workout-button,
+#logout-button {
+  background: var(--btn-danger-bg) !important;
+  border-color: var(--btn-danger-border) !important;
+  color: #f1f1f1 !important;
+}
+/* hover/active for danger */
+#exit-workout-button:hover,
+#logout-button:hover { background:#351f1f !important; }
+#exit-workout-button:active,
+#logout-button:active { background:#241616 !important; }
+
+/* Disabled state – unmistakable */
+button:disabled,
+#start-button-bottom:disabled,
+.start-button:disabled {
+  background: var(--btn-disabled-bg) !important;
+  color: var(--btn-disabled-text) !important;
+  border-color: var(--btn-disabled-border) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Focus ring for keyboard/tap */
+button:focus-visible,
+#start-button-bottom:focus-visible,
+.start-button:focus-visible,
+.nav-btn:focus-visible,
+.settings-btn:focus-visible,
+#pause-button:focus-visible,
+#close-settings:focus-visible,
+#close-setup-settings:focus-visible,
+#exit-workout-button:focus-visible,
+#logout-button:focus-visible,
+#login-button:focus-visible {
+  outline: none;
+  box-shadow: var(--btn-shadow-hover), var(--ring);
+}
+
+/* Remove any leftover colored styles from earlier CSS */
+#start-button-bottom,
+.start-button,
+#close-settings,
+#close-setup-settings {
+  background-image: none !important;
+}
+
+
+/* =========================
+   WHITE BUTTON VARIANT (Clean Contrast)
+   ========================= */
+:root {
+  --btn-white-bg: #ffffff;
+  --btn-white-text: #111111;
+  --btn-white-border: #cfcfcf;
+  --btn-white-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  --btn-white-hover-bg: #f4f4f4;
+  --btn-white-active-bg: #e8e8e8;
+}
+
+/* Primary white buttons */
+#start-button-bottom,
+.start-button,
+#close-settings,
+#close-setup-settings {
+  background: var(--btn-white-bg) !important;
+  color: var(--btn-white-text) !important;
+  border: 1px solid var(--btn-white-border) !important;
+  font-weight: 800;
+  box-shadow: var(--btn-white-shadow);
+  transition: all 0.2s ease;
+}
+
+#start-button-bottom:hover,
+.start-button:hover,
+#close-settings:hover,
+#close-setup-settings:hover {
+  background: var(--btn-white-hover-bg) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+
+#start-button-bottom:active,
+.start-button:active,
+#close-settings:active,
+#close-setup-settings:active {
+  background: var(--btn-white-active-bg) !important;
+  transform: translateY(0);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Optional: keep secondary buttons dark for hierarchy */
+#pause-button,
+.nav-btn,
+.settings-btn,
+#exit-workout-button,
+#logout-button {
+  background: #1a1a1a;
+  color: #f4f4f4;
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  transition: all 0.2s ease;
+}
+
+#pause-button:hover,
+.nav-btn:hover,
+.settings-btn:hover,
+#exit-workout-button:hover,
+#logout-button:hover {
+  background: #222;
+  transform: translateY(-1px);
+}
