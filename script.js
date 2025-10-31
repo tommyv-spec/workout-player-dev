@@ -110,28 +110,21 @@ function lockSynthVoices() {
  */
 function waitForVoices(timeoutMs = 1500) {
   return new Promise(resolve => {
-    const done = () => { lockSynthVoices(); resolve(); };
-
-    // if voices already present → resolve immediately
-    if ((speechSynthesis.getVoices() || []).length > 0) return done();
+    const done = () => resolve();
+    if ((speechSynthesis.getVoices() || []).length) return done();
 
     let settled = false;
     const finish = () => { if (!settled) { settled = true; done(); } };
 
-    // 1) event path (if it ever fires)
-    const handler = () => { speechSynthesis.onvoiceschanged = null; finish(); };
-    speechSynthesis.onvoiceschanged = handler;
+    const prev = speechSynthesis.onvoiceschanged;
+    speechSynthesis.onvoiceschanged = () => { speechSynthesis.onvoiceschanged = prev || null; finish(); };
 
-    // 2) poll path (fires every 100ms)
     const start = Date.now();
     const poll = setInterval(() => {
       const vs = speechSynthesis.getVoices() || [];
-      if (vs.length > 0) { clearInterval(poll); finish(); }
-      else if (Date.now() - start >= timeoutMs) { clearInterval(poll); finish(); }
+      if (vs.length || Date.now() - start >= timeoutMs) { clearInterval(poll); finish(); }
     }, 100);
-
-    // 3) safety timeout
-    setTimeout(() => { clearInterval(poll); finish(); }, timeoutMs + 100);
+    setTimeout(() => { clearInterval(poll); finish(); }, timeoutMs + 200);
   });
 }
 
@@ -448,49 +441,35 @@ function waitForVoices(timeoutMs = 1500) {
 async function webSpeechSpeak(text, lang) {
   if (!("speechSynthesis" in window)) throw new Error("Web Speech not supported");
 
-  // Make sure voices exist (doesn't hang on Android)
   try { await waitForVoices(1500); } catch {}
 
+  // Cancel *before* creating new utterance
+  try { speechSynthesis.cancel(); } catch {}
+
+  const utter = new SpeechSynthesisUtterance(text);
+  const locked = synthVoicesLocked[lang] || pickVoice(lang);
+  if (locked) utter.voice = locked;
+  utter.lang = (locked && locked.lang) || lang || "it-IT";
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+  utter.volume = 1.0;
+
   return new Promise((resolve, reject) => {
-    try {
-      // Cancel any pending utterances (Android gets stuck otherwise)
-      try { speechSynthesis.cancel(); } catch {}
+    utter.onend = () => resolve();
+    utter.onerror = (e) => {
+      // ignore 'interrupted' (normal Android behavior)
+      if (e.error === "interrupted") return resolve();
+      reject(new Error("WebSpeech error: " + e.error));
+    };
 
-      const utter = new SpeechSynthesisUtterance(text);
-
-      // Prefer a locked voice; if none, DON'T force a bad voice—just set lang.
-      const locked = synthVoicesLocked[lang] || pickVoice(lang);
-      if (locked) utter.voice = locked;
-      utter.lang = (locked?.lang) || lang || "it-IT";
-      utter.rate = 1.0;
-      utter.pitch = 1.0;
-      utter.volume = 1.0;
-
-      // Extra Android stability: kick voices load again just before speak
-      try { speechSynthesis.getVoices(); } catch {}
-
-      utter.onend = () => resolve();
-      utter.onerror = (e) => reject(new Error("WebSpeech error: " + (e?.error || "unknown")));
-
-      const speakNow = () => {
-        try {
-          speechSynthesis.speak(utter);
-        } catch (err) {
-          reject(err);
-        }
-      };
-
-      // If engine is speaking (rare race), wait a tick then speak
-      if (speechSynthesis.speaking) {
-        setTimeout(speakNow, 60);
-      } else {
-        speakNow();
-      }
-    } catch (err) {
-      reject(err);
-    }
+    // Make sure queue is empty *before* speak (wait one tick)
+    setTimeout(() => {
+      try { speechSynthesis.speak(utter); }
+      catch (err) { reject(err); }
+    }, 60);
   });
 }
+
 
 
 async function speakSynth(text, lang = "it-IT") {
