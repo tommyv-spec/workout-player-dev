@@ -688,6 +688,16 @@ function buildFullWorkoutSequence(workout, includeWarmup = true) {
         });
       });
     }
+
+    // --- REST 60s tra blocchi ---
+    if (blockNumber < totalBlocks) {
+      sequence.push({
+        name: "REST",
+        duration: 60,
+        imageUrl: convertGoogleDriveToDirect("https://lh3.googleusercontent.com/d/1bibXbdrcXdh3vgNHp2Teby3ClS3VqZmb"),
+        isLabel: true
+      });
+    }
   });
 
   sequence.push({
@@ -1175,12 +1185,14 @@ function loadUserData(username) {
       if (!select) return;
       select.innerHTML = "";
 
-      userWorkouts.forEach(name => {
+      userWorkouts.forEach((name, i) => {
         const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
+        option.value = name;                  // keep internal key (A1, A2, …)
+        option.dataset.realName = name;       // keep original if you ever need it
+        option.textContent = `Sesh ${i + 1}`;  // what the user sees (sesh1, sesh2, …)
         select.appendChild(option);
       });
+
 
       if (select.options.length > 0) {
         select.selectedIndex = 0;
@@ -1459,10 +1471,12 @@ function buildStartPointSelector() {
 
   blocks.forEach((block, idx) => {
     const option = document.createElement('option');
-    option.value = block.index;
-    option.textContent = `${idx + 1}. ${block.name} (${block.rounds.length} rounds)`;
+    option.value = block.index;              // keep internal A1, A2, etc.
+    option.dataset.realName = block.name;    // store the original
+    option.textContent = `sesh${idx + 1}`;   // display simplified label
     phaseSelect.appendChild(option);
   });
+
 
   const newPhaseSelect = phaseSelect.cloneNode(true);
   phaseSelect.parentNode.replaceChild(newPhaseSelect, phaseSelect);
