@@ -400,41 +400,7 @@ async function speakCloud(text, lang = "it-IT") {
 }
 
 
-function waitForVoices(timeoutMs = 1500) {
-  return new Promise(resolve => {
-    const done = () => resolve();
 
-    try {
-      const got = speechSynthesis.getVoices() || [];
-      if (got.length > 0) return done();
-    } catch { /* ignore */ }
-
-    let settled = false;
-    const finish = () => { if (!settled) { settled = true; done(); } };
-
-    // Event path (many Androids never fire this, but keep it)
-    const prev = speechSynthesis.onvoiceschanged;
-    speechSynthesis.onvoiceschanged = () => {
-      speechSynthesis.onvoiceschanged = prev || null;
-      finish();
-    };
-
-    // Poll path
-    const start = Date.now();
-    const poll = setInterval(() => {
-      try {
-        const vs = speechSynthesis.getVoices() || [];
-        if (vs.length > 0) { clearInterval(poll); finish(); }
-        else if (Date.now() - start >= timeoutMs) { clearInterval(poll); finish(); }
-      } catch {
-        clearInterval(poll); finish();
-      }
-    }, 100);
-
-    // Hard timeout safety
-    setTimeout(() => { clearInterval(poll); finish(); }, timeoutMs + 200);
-  });
-}
 
 
 
