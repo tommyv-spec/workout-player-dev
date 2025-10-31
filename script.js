@@ -980,6 +980,7 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
 
   // helper so pause stores the same value we display
   const getRemaining = () => Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+  let lastSecond = -1; // 🔒 run second-based actions once per displayed second
 
   interval = setInterval(async () => {
     // paused? save & stop the ticking loop
@@ -998,81 +999,83 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
     const useVoiceSynth = mode === "synth";
     const useBip       = mode === "bip";
 
-    // milestones
-    if (remaining === 60) {
-      if (useVoiceCloud) speakCloud("mancano sessanta secondi", "it-IT");
-      if (useVoiceSynth) speakSynth("mancano sessanta secondi", "it-IT");
-      if (mode === "beppe") playBeppeAudio(beppeSounds.s60);
-    }
-    if (remaining === 30) {
-      if (useVoiceCloud) speakCloud("mancano trenta secondi", "it-IT");
-      if (useVoiceSynth) speakSynth("mancano trenta secondi", "it-IT");
-      if (mode === "beppe") playBeppeAudio(beppeSounds.s30);
-    }
+    // milestones & UI cues — run once per displayed second
+    if (remaining !== lastSecond) {
+      lastSecond = remaining;
 
-    // 10s preview (fire once per exercise)
-    if (remaining === 10 && !nextPreviewShown) {
-      nextPreviewShown = true;
-
-      timerEl.classList.add("warning-10");
-      gifEl.classList.add("gif-glow");
-      exerciseNameBar.classList.add("next-preview-active");
-
-      if (nextExercise) {
-        const nxHasReps = nextExercise.reps && !nextExercise.name.toLowerCase().includes("istruz");
-        const nxHasEqp  = nextExercise.tipoDiPeso && !nextExercise.name.toLowerCase().includes("istruz") && !nextExercise.isLabel;
-        const nxHasDur  = nextExercise.duration && !nextExercise.isLabel;
-
-        const nxParts = [];
-        if (nxHasEqp) nxParts.push(nextExercise.tipoDiPeso);
-        if (nxHasReps) nxParts.push(`${nextExercise.reps} REPS`);
-        if (nxHasDur) nxParts.push(`${nextExercise.duration}S`);
-        const nxInfo = nxParts.join(" | ");
-
-        // swap preview UI
-        document.getElementById("exercise-name").innerHTML = `
-          <div style="font-size:14px;opacity:.8;margin-bottom:4px;">PROSSIMO ESERCIZIO:</div>
-          <div style="font-size:22px;font-weight:800;letter-spacing:.5px;">${nextExercise.name}</div>
-          <div style="font-size:15px;font-weight:600;margin-top:4px;">${nxInfo}</div>
-        `;
-        document.getElementById("exercise-gif").src = nextExercise.imageUrl;
-
-        // preview voice strictly per mode
-        if (mode === "beppe") {
-          const urls = [beppeSounds.prossimo];
-          if (nextExercise.audio) urls.push(nextExercise.audio);
-          playBeppeAudioSequence(urls);
-        } else if (useVoiceCloud) {
-          await speakCloud("prossimo esercizio:", "it-IT");
-          await speakCloud(nextExercise.name, "it-IT");
-        } else if (useVoiceSynth) {
-          await speakSynth("prossimo esercizio:", "it-IT");
-          await speakSynth(nextExercise.name, "it-IT");
-        }
+      if (remaining === 60) {
+        if (useVoiceCloud) speakCloud("mancano sessanta secondi", "it-IT");
+        if (useVoiceSynth) speakSynth("mancano sessanta secondi", "it-IT");
+        if (mode === "beppe") playBeppeAudio(beppeSounds.s60);
+      }
+      if (remaining === 30) {
+        if (useVoiceCloud) speakCloud("mancano trenta secondi", "it-IT");
+        if (useVoiceSynth) speakSynth("mancano trenta secondi", "it-IT");
+        if (mode === "beppe") playBeppeAudio(beppeSounds.s30);
       }
 
-      if (useBip) playBeep();
+      // 10s preview (fire once per exercise)
+      if (remaining === 10 && !nextPreviewShown) {
+        nextPreviewShown = true;
+
+        timerEl.classList.add("warning-10");
+        gifEl.classList.add("gif-glow");
+        exerciseNameBar.classList.add("next-preview-active");
+
+        if (nextExercise) {
+          const nxHasReps = nextExercise.reps && !nextExercise.name.toLowerCase().includes("istruz");
+          const nxHasEqp  = nextExercise.tipoDiPeso && !nextExercise.name.toLowerCase().includes("istruz") && !nextExercise.isLabel;
+          const nxHasDur  = nextExercise.duration && !nextExercise.isLabel;
+
+          const nxParts = [];
+          if (nxHasEqp) nxParts.push(nextExercise.tipoDiPeso);
+          if (nxHasReps) nxParts.push(`${nextExercise.reps} REPS`);
+          if (nxHasDur) nxParts.push(`${nextExercise.duration}S`);
+          const nxInfo = nxParts.join(" | ");
+
+          // swap preview UI
+          document.getElementById("exercise-name").innerHTML = `
+            <div style="font-size:14px;opacity:.8;margin-bottom:4px;">PROSSIMO ESERCIZIO:</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:.5px;">${nextExercise.name}</div>
+            <div style="font-size:15px;font-weight:600;margin-top:4px;">${nxInfo}</div>
+          `;
+          document.getElementById("exercise-gif").src = nextExercise.imageUrl;
+
+          // preview voice strictly per mode
+          if (mode === "beppe") {
+            const urls = [beppeSounds.prossimo];
+            if (nextExercise.audio) urls.push(nextExercise.audio);
+            playBeppeAudioSequence(urls);
+          } else if (useVoiceCloud) {
+            await speakCloud("prossimo esercizio:", "it-IT");
+            await speakCloud(nextExercise.name, "it-IT");
+          } else if (useVoiceSynth) {
+            await speakSynth("prossimo esercizio:", "it-IT");
+            await speakSynth(nextExercise.name, "it-IT");
+          }
+        }
+
+        if (useBip) playBeep();
+      }
+
+      // color changes
+      if (remaining === 6) {
+        timerEl.classList.remove("warning-10");
+        timerEl.classList.add("warning-6");
+      }
+      if (remaining === 3) {
+        timerEl.classList.remove("warning-6");
+        timerEl.classList.add("warning-3");
+      }
+
+      // 5s countdown — runs once (no more stutter)
+      if (remaining === 5) {
+        if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
+        if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
+        if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
+      }
     }
 
-    // color changes
-    if (remaining === 6) {
-      timerEl.classList.remove("warning-10");
-      timerEl.classList.add("warning-6");
-    }
-    if (remaining === 3) {
-      timerEl.classList.remove("warning-6");
-      timerEl.classList.add("warning-3");
-    }
-
-    // 5s countdown
-    let countdown5Fired = false;
-    if (remaining === 5 && !countdown5Fired) {
-      countdown5Fired = true;
-      if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
-      if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
-      if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
-    }
-    if (remaining < 5) countdown5Fired = false; // reset for next exercise
 
     // done → next
     if (remaining <= 0) {
