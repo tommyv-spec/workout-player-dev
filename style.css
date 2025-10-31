@@ -1,17 +1,23 @@
 /* ====== CSS VARIABLES FOR DYNAMIC LAYOUT ====== */
-:root {
-  /* Heights for precise calculation - adapts to ANY screen */
+:root{
   --header-height: 13vh;
+
+  /* Height of the bar itself */
   --bottom-button-height: 8vh;
-  
-  /* Safe areas */
+
+  /* iOS notches / home indicator */
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  
-  /* Calculated available height for main-app */
-  --main-app-height: calc(100vh - var(--header-height) - var(--bottom-button-height));
-  --main-app-height-dvh: calc(100dvh - var(--header-height) - var(--bottom-button-height));
+
+  /* Bar + safe area combined */
+  --bottom-button-total: calc(var(--bottom-button-height) + var(--safe-area-bottom));
+
+  /* Use svh first on iOS, then dvh, then vh as fallback */
+  --main-app-height-svh: calc(100svh - var(--header-height) - var(--bottom-button-total));
+  --main-app-height-dvh: calc(100dvh - var(--header-height) - var(--bottom-button-total));
+  --main-app-height:     calc(100vh  - var(--header-height) - var(--bottom-button-total));
 }
+
 
 /* ====== RESPONSIVE ADJUSTMENTS FOR VARIABLES ====== */
 
@@ -2165,4 +2171,37 @@ button:focus-visible,
   width: 100vw;              /* avoid width derived from any ancestor */
   z-index: 9999;
   transform: translateZ(0);  /* promote to its own layer (Safari) */
+}
+
+
+#main-app{
+  /* …your other styles… */
+
+  height: var(--main-app-height-svh);
+  height: var(--main-app-height-dvh);
+  height: var(--main-app-height);
+
+  /* Prevent content from hiding behind the fixed bar */
+  padding-bottom: var(--bottom-button-total);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+
+#bottom-buttons-container{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  z-index: 9999;
+
+  /* Make it the intended height PLUS safe-area */
+  min-height: var(--bottom-button-height);
+  padding-bottom: var(--safe-area-bottom);
+
+  /* Optional, helps Safari layering */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
