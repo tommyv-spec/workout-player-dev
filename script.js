@@ -54,7 +54,37 @@ window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 let nextPreviewShown = false;   // controls the 10s preview (fires once per exercise)
 
+function setSoundMode(value) {
+  const a = document.getElementById("soundMode");
+  const b = document.getElementById("soundMode-setup");
+  if (a) a.value = value;
+  if (b) b.value = value;
+}
+function getPreferredVoice() {
+  const list = (speechSynthesis.getVoices && speechSynthesis.getVoices()) || [];
+  // prefer Google voices first
+  const googleIt = list.find(v => /google/i.test(v.name||"") && /^it(-|_)/i.test(v.lang||""));
+  if (googleIt) return googleIt;
+  const googleEn = list.find(v => /google/i.test(v.name||"") && /^en(-|_)/i.test(v.lang||""));
+  if (googleEn) return googleEn;
+  // then any Italian / English
+  const anyIt = list.find(v => /^it(-|_)/i.test(v.lang||""));
+  if (anyIt) return anyIt;
+  const anyEn = list.find(v => /^en(-|_)/i.test(v.lang||""));
+  if (anyEn) return anyEn;
+  // fallback: first Google, else first voice
+  const anyGoogle = list.find(v => /google/i.test(v.name||""));
+  return anyGoogle || list[0] || null;
+}
+try {
+  const __ctx = new (window.AudioContext || window.webkitAudioContext)();
+  window.__audioCtx = __ctx;
+  setInterval(() => {
+    if (__ctx.state === "suspended") { __ctx.resume().catch(()=>{}); }
+  }, 1500);
+} catch {}
 
+  
 // keep a shared AudioContext alive on Android
 try {
   const __ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -641,21 +671,19 @@ async function speakCloud(text, lang = "it-IT") {
 
 
 async function webSpeechSpeak(text, lang) {
-  // 1) make sure voices exist
-  try { await waitForVoices(1500); } catch {}
+  // Make sure voices exist (Android may not fire onvoiceschanged)
+  try {
+    const t0 = Date.now();
+    while (((speechSynthesis.getVoices?.()||[]).length === 0) && (Date.now() - t0 < 1500)) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+  } catch {}
 
-  // 2) always clear pending + resume (Android can be "paused")
+  // Cancel pending + resume engine (Android often paused)
   try { speechSynthesis.cancel(); } catch {}
   try { speechSynthesis.resume(); } catch {}
 
-  // 3) pick a REAL voice (prefer Google italian/en, else any it/en, else first)
-  const allVoices = (speechSynthesis.getVoices && speechSynthesis.getVoices()) || [];
-  const preferGoogle = allVoices.find(v =>
-    /google/i.test(v.name || "") && /(it|en)-/i.test(v.lang || "")
-  );
-  const fallbackItEn = allVoices.find(v => /(it|en)-/i.test(v.lang || ""));
-  const voice = preferGoogle || fallbackItEn || allVoices[0] || null;
-
+  const voice = getPreferredVoice();
   const utter = new SpeechSynthesisUtterance(text);
   if (voice) utter.voice = voice;
   utter.lang   = (voice && voice.lang) || (lang || "it-IT");
@@ -663,24 +691,20 @@ async function webSpeechSpeak(text, lang) {
   utter.pitch  = 1.0;
   utter.volume = 1.0;
 
-  // optional: tiny delay helps Android
+  // Tiny delay helps some Android builds
   await new Promise(r => setTimeout(r, 60));
 
   return new Promise((resolve, reject) => {
-    let settled = false;
-    const done = (ok=true, e=null) => {
-      if (settled) return; settled = true;
-      ok ? resolve() : reject(e instanceof Error ? e : new Error(String(e || "unknown")));
-    };
+    let done = false;
+    const finish = (ok, err) => { if (done) return; done = true; ok ? resolve() : reject(err||new Error("speak failed")); };
 
-    // watchdog: some androids never fire events
-    const watchdog = setTimeout(() => done(true), 3000);
+    const watchdog = setTimeout(() => finish(true), 3000); // some Androids never fire events
 
     utter.onstart = () => { try { clearTimeout(watchdog); } catch {} };
-    utter.onend   = () => { try { clearTimeout(watchdog); } catch {}; done(true); };
+    utter.onend   = () => { try { clearTimeout(watchdog); } catch {}; finish(true); };
     utter.onerror = (e)  => { try { clearTimeout(watchdog); } catch {};
-                              if (e && e.error === "interrupted") return done(true);
-                              done(false, e); };
+                              if (e && e.error === "interrupted") return finish(true);
+                              finish(false, e); };
 
     try {
       // resume again right before talking
@@ -688,10 +712,11 @@ async function webSpeechSpeak(text, lang) {
       speechSynthesis.speak(utter);
     } catch (err) {
       try { clearTimeout(watchdog); } catch {}
-      done(false, err);
+      finish(false, err);
     }
   });
 }
+
 
 
 
@@ -1674,6 +1699,13 @@ function buildStartPointSelector() {
 
 /* -------------------- DOM Ready -------------------- */
 document.addEventListener("DOMContentLoaded", () => {
+  setSoundMode("synth"); // force synth on start for debugging
+  const a = document.getElementById("soundMode");
+  const b = document.getElementById("soundMode-setup");
+  if (a) a.addEventListener("change", e => setSoundMode(e.target.value));
+  if (b) b.addEventListener("change", e => setSoundMode(e.target.value));
+
+
   warmUpServer();
   speechSynthesis.getVoices(); // trigger voices load
   waitForVoices(1500).then(lockSynthVoices).catch(()=>{});
