@@ -251,7 +251,6 @@ main {
   -webkit-overflow-scrolling: touch;
   
   /* NO padding-bottom - height is calculated precisely */
-  padding-bottom: 0;
 }
 
 #setup-screen {
@@ -2205,3 +2204,26 @@ button:focus-visible,
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
 }
+
+
+/* ==== FORCE MAIN-APP TO STOP ABOVE THE FOOTER (LAST RULE WINS) ==== */
+
+
+#main-app{
+  /* height already calculated above; just ensure bottom space is always reserved */
+  padding-bottom: var(--bottom-bar-offset) !important;
+}
+
+/* Footer should size itself naturally; min-height keeps it tall enough */
+#bottom-buttons-container{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  z-index: 9999;
+  min-height: var(--bottom-button-height);
+  padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  transform: translateZ(0);
+}
+
+/* Remove any older footer rule that sets a fixed height + big vertical % padding */
