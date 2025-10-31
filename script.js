@@ -77,18 +77,25 @@ const SYNTH_PREFS = {
 const synthVoicesLocked = {}; // per lingua → voce scelta
 
 function pickVoice(lang) {
-  const all = speechSynthesis.getVoices() || [];
-  // 1) try preferred names
+  const all = (speechSynthesis.getVoices && speechSynthesis.getVoices()) || [];
+  const want = (lang || "").toLowerCase();
+
+  // 1) Try preferred names first
   for (const name of (SYNTH_PREFS[lang] || [])) {
-    const v = all.find(v => v.lang?.toLowerCase().startsWith(lang.toLowerCase()) && v.name?.includes(name));
+    const v = all.find(v =>
+      (v.lang || "").toLowerCase().startsWith(want) &&
+      (v.name || "").includes(name)
+    );
     if (v) return v;
   }
-  // 2) any voice of that lang
-  const sameLang = all.filter(v => v.lang?.toLowerCase().startsWith(lang.toLowerCase()));
-  if (sameLang.length) return sameLang[0];
-  // 3) last resort: any voice
+  // 2) Any voice with same lang
+  const same = all.filter(v => (v.lang || "").toLowerCase().startsWith(want));
+  if (same.length) return same[0];
+
+  // 3) Fallback: any available
   return all[0] || null;
 }
+
 
 function lockSynthVoices() {
   try {
@@ -399,11 +406,50 @@ async function speakCloud(text, lang = "it-IT") {
   }
 }
 
+
+function waitForVoices(timeoutMs = 1500) {
+  return new Promise(resolve => {
+    const done = () => resolve();
+
+    try {
+      const got = speechSynthesis.getVoices() || [];
+      if (got.length > 0) return done();
+    } catch { /* ignore */ }
+
+    let settled = false;
+    const finish = () => { if (!settled) { settled = true; done(); } };
+
+    // Event path (many Androids never fire this, but keep it)
+    const prev = speechSynthesis.onvoiceschanged;
+    speechSynthesis.onvoiceschanged = () => {
+      speechSynthesis.onvoiceschanged = prev || null;
+      finish();
+    };
+
+    // Poll path
+    const start = Date.now();
+    const poll = setInterval(() => {
+      try {
+        const vs = speechSynthesis.getVoices() || [];
+        if (vs.length > 0) { clearInterval(poll); finish(); }
+        else if (Date.now() - start >= timeoutMs) { clearInterval(poll); finish(); }
+      } catch {
+        clearInterval(poll); finish();
+      }
+    }, 100);
+
+    // Hard timeout safety
+    setTimeout(() => { clearInterval(poll); finish(); }, timeoutMs + 200);
+  });
+}
+
+
+
 async function webSpeechSpeak(text, lang) {
   if (!("speechSynthesis" in window)) throw new Error("Web Speech not supported");
 
   // Make sure voices exist (doesn't hang on Android)
-  await waitForVoices(1500).catch(()=>{});
+  try { await waitForVoices(1500); } catch {}
 
   return new Promise((resolve, reject) => {
     try {
