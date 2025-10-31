@@ -2157,3 +2157,12 @@ button:focus-visible,
   background: #222;
   transform: translateY(-1px);
 }
+
+
+#bottom-buttons-container{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  width: 100vw;              /* avoid width derived from any ancestor */
+  z-index: 9999;
+  transform: translateZ(0);  /* promote to its own layer (Safari) */
+}
