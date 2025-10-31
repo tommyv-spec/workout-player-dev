@@ -351,31 +351,7 @@ main {
 }
 
 /* BOTTOM BUTTONS CONTAINER - Settings + Start Workout */
-#bottom-buttons-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  
-  /* CRITICAL: Fixed height so children can use % */
-  height: var(--bottom-button-height);
-  
-  display: flex;
-  gap: 1%;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  
-  /* Padding relative to container height */
-  padding: 8% 3%;
-  padding-bottom: max(8%, var(--safe-area-bottom));
-  box-sizing: border-box;
-  
-  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.9) 80%, transparent 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
+
 
 /* START BUTTON - IN CONTAINER */
 #start-button-bottom {
@@ -1251,20 +1227,7 @@ audio {
 }
 
 /* Bottom button container - ensure it doesn't overlap */
-#bottom-buttons-container {
-  bottom: 0;
-  padding: 12px 20px;
-  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.9) 80%, transparent 100%);
-  backdrop-filter: blur(10px);
-  left: 0;
-  right: 0;
-  width: 100%;
-  max-width: none;
-  transform: none;
-  justify-content: center;
-  gap: clamp(8px, 2vw, 12px);
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-}
+
 
 #start-button-bottom {
   max-width: min(400px, 90vw);
@@ -1811,14 +1774,7 @@ main { max-width: min(600px, 95vw); margin: 0 auto; padding: 0 20px; background:
 .start-button:hover:not(:disabled) { background: #2b2c30; transform: translateY(-2px); }
 .start-button:disabled { opacity: .5; cursor: not-allowed; }
 
-#bottom-buttons-container {
-  position: fixed; bottom: 0; left: 0; right: 0; width: 100%;
-  height: var(--bottom-button-height);
-  display: flex; gap: 1%; align-items: center; justify-content: center; z-index: 9999;
-  padding: 12px 20px; padding-bottom: max(12px, env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 80%, transparent 100%);
-  backdrop-filter: blur(10px);
-}
+
 
 #start-button-bottom {
   flex: 1; max-width: min(400px, 90vw); height: 65%;
@@ -2163,44 +2119,45 @@ button:focus-visible,
 }
 
 
-#bottom-buttons-container{
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  width: 100vw;              /* avoid width derived from any ancestor */
-  z-index: 9999;
-  transform: translateZ(0);  /* promote to its own layer (Safari) */
-}
 
 
 
-
+/* Replace every bottom-buttons-container block with this ONE */
 #bottom-buttons-container{
   position: fixed;
   left: 0; right: 0; bottom: 0;
   width: 100vw;
+  height: var(--footer-total);           /* exact rendered height */
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 0 20px;                       /* no padding-bottom with safe area here */
+  background: linear-gradient(to top, rgba(0,0,0,.95), rgba(0,0,0,.9) 80%, transparent);
+  backdrop-filter: blur(10px);
   z-index: 9999;
-
-  /* Make it the intended height PLUS safe-area */
-  min-height: var(--bottom-button-height);
-  padding-bottom: var(--safe-area-bottom);
-
-  /* Optional, helps Safari layering */
   transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+}
+
+
+/* Replace ALL other #main-app rules for height/padding with this */
+#main-app{
+  height: calc(100svh - var(--header-height) - var(--footer-total));
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  /* reserve space so content never goes under the bar */
+  padding-bottom: var(--footer-total);
 }
 
 
 
-/* Footer should size itself naturally; min-height keeps it tall enough */
-#bottom-buttons-container{
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  width: 100vw;
-  z-index: 9999;
-  min-height: var(--bottom-button-height);
-  padding: 12px 20px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  transform: translateZ(0);
-}
+
+
 
 /* Remove any older footer rule that sets a fixed height + big vertical % padding */
+
+
+:root{
+  --footer-base: 72px;                   /* tune to your design */
+  --footer-safe: env(safe-area-inset-bottom, 0px);
+  --footer-total: calc(var(--footer-base) + var(--footer-safe));
+}
