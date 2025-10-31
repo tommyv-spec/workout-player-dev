@@ -95,181 +95,7 @@ try {
 } catch {}
 
 
-/// degbu for android
-/* ================= DEBUG HUD (Android TTS) ================ */
-(function(){
-  if (window.__DEBUG_HUD__) return; // avoid duplicates
-  window.__DEBUG_HUD__ = true;
 
-  const css = `
-  #debugHUD{position:fixed;inset:auto 8px 8px auto;z-index:999999;
-    width: min(92vw,420px);max-height:50vh;display:flex;flex-direction:column;
-    font:12px/1.35 system-ui, -apple-system, Roboto, Arial; color:#111;
-    background:#fff; border:1px solid #0003; box-shadow:0 6px 18px #0005; border-radius:10px; overflow:hidden}
-  #debugHUD header{display:flex;align-items:center;justify-content:space-between;
-    background:#111;color:#fff;padding:6px 9px;font-weight:700}
-  #debugHUD .btns{display:flex;gap:6px;flex-wrap:wrap;padding:6px}
-  #debugHUD button{font:12px system-ui;padding:6px 8px;border-radius:8px;border:1px solid #0003;background:#f3f3f3}
-  #debugHUD button:active{transform:translateY(1px)}
-  #debugHUD pre{margin:0;padding:6px 8px;background:#fafafa;border-top:1px solid #0002;overflow:auto;flex:1}
-  #debugHUD .row{display:flex;gap:8px;flex-wrap:wrap;padding:2px 8px 6px 8px}
-  #debugHUD .pill{background:#eee;border:1px solid #0002;border-radius:999px;padding:2px 8px}
-  #debugHUD .red{background:#ffe8e8;border-color:#ff8c8c}
-  #debugHUD .green{background:#e9ffe8;border-color:#87d487}
-  #debugHUD .yellow{background:#fff7d6;border-color:#f0d27a}
-  #debugHUD .muted{opacity:.7}
-  #debugHUD .drag{cursor:move}
-  `;
-  const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
-
-  const box = document.createElement('div'); box.id='debugHUD'; box.innerHTML = `
-    <header class="drag">
-      <div>🔎 Android Synth Debug</div>
-      <div>
-        <button id="hudHide" title="Hide">—</button>
-      </div>
-    </header>
-    <div class="row" id="hudState">
-      <span class="pill" id="pAudio">audioUnlocked: ?</span>
-      <span class="pill" id="pPrimed">synthPrimed: ?</span>
-      <span class="pill" id="pCtx">AudioContext: ?</span>
-      <span class="pill" id="pVoices">voices: ?</span>
-      <span class="pill" id="pMode">mode: ?</span>
-      <span class="pill" id="pVoiceName" title="Selected voice">voice: ?</span>
-    </div>
-    <div class="btns">
-      <button id="probeSpeak">Speak “test sintetico”</button>
-      <button id="probeResume">speechSynthesis.resume()</button>
-      <button id="probeCancel">speechSynthesis.cancel()</button>
-      <button id="probeReloadVoices">Reload voices</button>
-      <button id="probeDump">Dump state</button>
-      <button id="probeClear">Clear log</button>
-    </div>
-    <pre id="hudLog"></pre>
-  `;
-  document.body.appendChild(box);
-
-  // draggable header
-  (function(){
-    const header = box.querySelector('header');
-    let sx=0, sy=0, bx=0, by=0, dragging=false;
-    const onMove = e=>{
-      if(!dragging) return;
-      const p = e.touches? e.touches[0]:e;
-      const nx = Math.max(8, Math.min(window.innerWidth- box.offsetWidth - 8, bx + (p.clientX - sx)));
-      const ny = Math.max(8, Math.min(window.innerHeight- box.offsetHeight - 8, by + (p.clientY - sy)));
-      box.style.right = (window.innerWidth - nx - box.offsetWidth) + 'px';
-      box.style.bottom = (window.innerHeight - ny - box.offsetHeight) + 'px';
-    };
-    const onUp = ()=>{ dragging=false; window.removeEventListener('mousemove',onMove); window.removeEventListener('touchmove',onMove); };
-    header.addEventListener('mousedown', e=>{ dragging=true; sx=e.clientX; sy=e.clientY; const r=box.getBoundingClientRect(); bx=r.left; by=r.top; window.addEventListener('mousemove',onMove); });
-    header.addEventListener('touchstart', e=>{ dragging=true; const p=e.touches[0]; sx=p.clientX; sy=p.clientY; const r=box.getBoundingClientRect(); bx=r.left; by=r.top; window.addEventListener('touchmove',onMove,{passive:false}); },{passive:true});
-    window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp);
-  })();
-
-  const logEl = document.getElementById('hudLog');
-  function log(...args){
-    const line = args.map(a => (typeof a==='string'? a : JSON.stringify(a))).join(' ');
-    logEl.textContent += (line + '\n');
-    logEl.scrollTop = logEl.scrollHeight;
-    console.log('[HUD]', ...args);
-  }
-  window.__HUD_LOG__ = log;
-
-  // live pills
-  function setPill(id, text, cls=''){ const el=document.getElementById(id); if(!el) return; el.textContent=text; el.className='pill '+cls; }
-
-  async function getCtxState(){
-    try{
-      const ctx = window.__audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-      return ctx.state || 'unknown';
-    }catch{return 'n/a'}
-  }
-  function getMode(){
-    return document.getElementById('soundMode')?.value ||
-           document.getElementById('soundMode-setup')?.value || 'n/a';
-  }
-  function getSelectedVoice(){
-    try{
-      const all = speechSynthesis.getVoices() || [];
-      // mirror your pick logic:
-      const want = (getMode()==='synth' ? (window.__lastSynthLang__||'it-IT') : 'it-IT').toLowerCase();
-      const google = all.find(v => (v.lang||'').toLowerCase().startsWith(want) && /google/i.test(v.name||''));
-      return (google || window.synthVoicesLocked?.['it-IT'] || all[0] || null);
-    }catch{return null}
-  }
-  function updateHUD(){
-    const unlocked = !!window.__audioUnlocked;
-    const primed = !!window.__synthPrimed;
-    const voices = (speechSynthesis.getVoices?.()||[]).length;
-    const mode = getMode();
-    const v = getSelectedVoice();
-
-    setPill('pAudio', `audioUnlocked: ${unlocked}`, unlocked? 'green':'red');
-    setPill('pPrimed', `synthPrimed: ${primed}`, primed? 'green':'yellow');
-    getCtxState().then(s => setPill('pCtx', `AudioContext: ${s}`, s==='running'?'green':'yellow'));
-    setPill('pVoices', `voices: ${voices}`, voices? 'green':'red');
-    setPill('pMode', `mode: ${mode}`, 'muted');
-    setPill('pVoiceName', `voice: ${v? (v.name+' · '+v.lang):'none'}`, v? '':'red');
-  }
-  setInterval(updateHUD, 1000); updateHUD();
-
-  // buttons
-  document.getElementById('hudHide').onclick = ()=>{ box.style.display='none'; };
-  document.getElementById('probeClear').onclick = ()=>{ logEl.textContent=''; };
-  document.getElementById('probeReloadVoices').onclick = ()=>{
-    try{ speechSynthesis.getVoices(); }catch{}
-    setTimeout(updateHUD, 400);
-    log('🔁 voices reloaded; count=', (speechSynthesis.getVoices?.()||[]).length);
-  };
-  document.getElementById('probeResume').onclick = ()=>{
-    try{ speechSynthesis.resume(); log('▶️ resume() called'); }catch(e){ log('resume err', e.message||e); }
-  };
-  document.getElementById('probeCancel').onclick = ()=>{
-    try{ speechSynthesis.cancel(); log('⏹ cancel() called'); }catch(e){ log('cancel err', e.message||e); }
-  };
-  document.getElementById('probeSpeak').onclick = async ()=>{
-    try{
-      window.__lastSynthLang__ = 'it-IT';
-      log('🗣️ speaking test via Synth…');
-      await (window.speakSynth? window.speakSynth("test sintetico", "it-IT") : Promise.reject('speakSynth missing'));
-      log('✅ test finished (Synth)');
-    }catch(e){ log('❌ test speak failed:', e && (e.message||e)); }
-  };
-
-  // Global error hook
-  window.addEventListener('error', (e)=>{
-    log('💥 window.onerror:', (e.message||'err'), '@', (e.filename||'?')+':'+(e.lineno||'?'));
-  });
-
-  // Patch webSpeechSpeak to report events (if present later)
-  const patch = ()=>{
-    if (!window.webSpeechSpeak || window.webSpeechSpeak.__patched) return;
-    const orig = window.webSpeechSpeak;
-    window.webSpeechSpeak = async function(text, lang){
-      window.__lastSynthLang__ = lang || 'it-IT';
-      const all = (speechSynthesis.getVoices?.()||[]).map(v=>`${v.name}·${v.lang}`);
-      log('📢 webSpeechSpeak called', JSON.stringify({text, lang}), 'voices=', all.length);
-      try { await waitForVoices?.(1500); } catch {}
-      try { speechSynthesis.resume(); } catch {}
-      // Create our own utterance to inject event logs, but delegate to orig logic:
-      const p = orig(text, lang);
-      // We can’t capture the inner utterance from here, but orig already logs via its promises.
-      return p.then(()=>{ log('✅ Synth DONE'); updateHUD(); })
-              .catch((e)=>{ log('❌ Synth ERR:', e && (e.message||e)); updateHUD(); throw e; });
-    };
-    window.webSpeechSpeak.__patched = true;
-    log('🧩 Patched webSpeechSpeak for logging');
-  };
-  const intv = setInterval(()=>{ patch(); if(window.webSpeechSpeak?.__patched) clearInterval(intv); }, 200);
-
-  // Also log speechSynthesis events by briefly speaking a silent char when primed flips true
-  const primedInterval = setInterval(()=>{
-    if (window.__synthPrimed) { clearInterval(primedInterval); log('✅ synthPrimed == true'); }
-  }, 200);
-
-  log('✅ Debug HUD ready');
-})();
 
 
 
@@ -1239,11 +1065,14 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
     }
 
     // 5s countdown
-    if (remaining === 5) {
+    let countdown5Fired = false;
+    if (remaining === 5 && !countdown5Fired) {
+      countdown5Fired = true;
       if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
       if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
       if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
     }
+    if (remaining < 5) countdown5Fired = false; // reset for next exercise
 
     // done → next
     if (remaining <= 0) {
