@@ -55,6 +55,16 @@ window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let nextPreviewShown = false;   // controls the 10s preview (fires once per exercise)
 
 
+// keep a shared AudioContext alive on Android
+try {
+  const __ctx = new (window.AudioContext || window.webkitAudioContext)();
+  window.__audioCtx = __ctx;
+  setInterval(() => {
+    if (__ctx.state === "suspended") { __ctx.resume().catch(()=>{}); }
+  }, 2000);
+} catch {}
+
+
 /// degbu for android
 /* ================= DEBUG HUD (Android TTS) ================ */
 (function(){
@@ -631,57 +641,58 @@ async function speakCloud(text, lang = "it-IT") {
 
 
 async function webSpeechSpeak(text, lang) {
-  window.__HUD_LOG__?.('➡️ webSpeechSpeak()', {text, lang});
-  if (!("speechSynthesis" in window)) throw new Error("Web Speech not supported");
-
+  // 1) make sure voices exist
   try { await waitForVoices(1500); } catch {}
+
+  // 2) always clear pending + resume (Android can be "paused")
   try { speechSynthesis.cancel(); } catch {}
   try { speechSynthesis.resume(); } catch {}
 
+  // 3) pick a REAL voice (prefer Google italian/en, else any it/en, else first)
   const allVoices = (speechSynthesis.getVoices && speechSynthesis.getVoices()) || [];
-  const want = (lang || "it-IT").toLowerCase();
-  const preferGoogle = allVoices.find(v => (v.lang || "").toLowerCase().startsWith(want) && /google/i.test(v.name || ""));
-  const locked = preferGoogle || synthVoicesLocked[lang] || pickVoice(lang);
+  const preferGoogle = allVoices.find(v =>
+    /google/i.test(v.name || "") && /(it|en)-/i.test(v.lang || "")
+  );
+  const fallbackItEn = allVoices.find(v => /(it|en)-/i.test(v.lang || ""));
+  const voice = preferGoogle || fallbackItEn || allVoices[0] || null;
 
   const utter = new SpeechSynthesisUtterance(text);
-  if (locked) utter.voice = locked;
-  utter.lang = (locked && locked.lang) || lang || "it-IT";
-  utter.rate = 1.0; utter.pitch = 1.0; utter.volume = 1.0;
+  if (voice) utter.voice = voice;
+  utter.lang   = (voice && voice.lang) || (lang || "it-IT");
+  utter.rate   = 1.0;
+  utter.pitch  = 1.0;
+  utter.volume = 1.0;
 
-  window.__HUD_LOG__?.('🎙️ utter prepared', {
-    selectedVoice: locked? `${locked.name} · ${locked.lang}` : 'none',
-    voicesCount: allVoices.length
-  });
+  // optional: tiny delay helps Android
+  await new Promise(r => setTimeout(r, 60));
 
   return new Promise((resolve, reject) => {
     let settled = false;
-    const done = (ok = true, e = null) => {
+    const done = (ok=true, e=null) => {
       if (settled) return; settled = true;
-      window.__HUD_LOG__?.(ok? '✅ utter end' : '❌ utter error', e ? (e.error || e.message || e) : '');
       ok ? resolve() : reject(e instanceof Error ? e : new Error(String(e || "unknown")));
     };
 
-    const watchdog = setTimeout(() => {
-      window.__HUD_LOG__?.('⏱️ watchdog fired: no end/error within 3000ms');
-      done(true);
-    }, 3000);
+    // watchdog: some androids never fire events
+    const watchdog = setTimeout(() => done(true), 3000);
 
-    utter.onstart = () => { try{clearTimeout(watchdog);}catch{}; window.__HUD_LOG__?.('▶️ onstart'); };
-    utter.onend   = () => { try{clearTimeout(watchdog);}catch{}; done(true); };
-    utter.onerror = (e) => { try{clearTimeout(watchdog);}catch{}; if (e && e.error === "interrupted") return done(true); done(false, e); };
+    utter.onstart = () => { try { clearTimeout(watchdog); } catch {} };
+    utter.onend   = () => { try { clearTimeout(watchdog); } catch {}; done(true); };
+    utter.onerror = (e)  => { try { clearTimeout(watchdog); } catch {};
+                              if (e && e.error === "interrupted") return done(true);
+                              done(false, e); };
 
     try {
-      setTimeout(() => {
-        try { speechSynthesis.resume(); } catch {}
-        window.__HUD_LOG__?.('🗣️ speak()');
-        speechSynthesis.speak(utter);
-      }, 60);
+      // resume again right before talking
+      try { speechSynthesis.resume(); } catch {}
+      speechSynthesis.speak(utter);
     } catch (err) {
-      try{clearTimeout(watchdog);}catch{}
+      try { clearTimeout(watchdog); } catch {}
       done(false, err);
     }
   });
 }
+
 
 
 
