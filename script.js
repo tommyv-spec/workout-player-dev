@@ -422,27 +422,36 @@ async function webSpeechSpeak(text, lang) {
 
   return new Promise((resolve, reject) => {
     let settled = false;
-    const finishOk = () => { if (!settled) { settled = true; resolve(); } };
-    const finishErr = (e) => {
-      if (!settled) {
-        settled = true;
-        // treat “interrupted” as success on Android
-        if (e && e.error === "interrupted") return resolve();
-        reject(new Error("WebSpeech error: " + (e?.error || e)));
-      }
+    const done = (ok=true, e=null) => {
+      if (settled) return;
+      settled = true;
+      ok ? resolve() : reject(new Error("WebSpeech error: " + (e?.error || e || "unknown")));
     };
 
-    // if Android never calls onend/onerror, bail out after 2.5s
-    const watchdog = setTimeout(finishOk, 2500);
+    const utter = new SpeechSynthesisUtterance(text);
+    const locked = synthVoicesLocked[lang] || pickVoice(lang);
+    if (locked) utter.voice = locked;
+    utter.lang = locked?.lang || lang || "it-IT";
+    utter.rate = 1.0; utter.pitch = 1.0; utter.volume = 1.0;
 
-    utter.onend = () => { clearTimeout(watchdog); finishOk(); };
-    utter.onerror = (e) => { clearTimeout(watchdog); finishErr(e); };
+    // If Android never fires events, bail out gracefully
+    const watchdog = setTimeout(() => done(true), 2500);
 
-    setTimeout(() => {
-      try { speechSynthesis.speak(utter); }
-      catch (err) { clearTimeout(watchdog); finishErr(err); }
-    }, 60);
+    utter.onend   = () => { clearTimeout(watchdog); done(true); };
+    utter.onerror = (e) => { clearTimeout(watchdog); 
+                            if (e && e.error === "interrupted") return done(true);
+                            done(false, e); };
+
+    try {
+      speechSynthesis.cancel();
+      // tiny defer helps some engines
+      setTimeout(() => speechSynthesis.speak(utter), 60);
+    } catch (err) {
+      clearTimeout(watchdog);
+      done(false, err);
+    }
   });
+
 
 }
 
@@ -829,7 +838,7 @@ async function playExercise(index, exercises, resumeTime = null) {
   const useVoiceCloud = mode === "voice";
   const useVoiceSynth = mode === "synth";
 
-  // start the countdown right away
+  // start the countdown immediately
   startExerciseTimer(duration, exercise, nextExercise);
 
   // say the exercise name without blocking the timer
@@ -840,9 +849,9 @@ async function playExercise(index, exercises, resumeTime = null) {
       : null;
 
   if (sayName) {
-    // watchdog so a stuck synth on Android doesn’t freeze future calls
+    // guard so a stuck engine on Android can’t freeze future calls
     const guard = new Promise(res => setTimeout(res, 2500));
-    Promise.race([sayName(), guard]).catch(()=>{});
+    Promise.race([sayName(), guard]).catch(() => {});
   }
 
 }
