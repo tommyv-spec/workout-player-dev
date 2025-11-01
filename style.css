@@ -1249,7 +1249,7 @@ audio {
 /* Ensure content is never cut off - force scroll if needed */
 #main-app {
   scroll-behavior: smooth;
-  scroll-padding-bottom: 120px; /* Extra padding when scrolling to anchors */
+  scroll-padding-bottom: var(--footer-total); /* Padding when scrolling to anchors */
 }
 
 /* Improve scrollbar appearance */
@@ -2129,7 +2129,8 @@ button:focus-visible,
   width: 100vw;
   height: var(--footer-total);           /* exact rendered height */
   display: flex; align-items: center; justify-content: center; gap: 12px;
-  padding: 0 20px;                       /* no padding-bottom with safe area here */
+  padding: 0 20px;                       
+  padding-bottom: env(safe-area-inset-bottom, 0px); /* iOS safe area */
   background: linear-gradient(to top, rgba(0,0,0,.95), rgba(0,0,0,.9) 80%, transparent);
   backdrop-filter: blur(10px);
   z-index: 9999;
@@ -2144,8 +2145,12 @@ button:focus-visible,
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 
-  /* reserve space so content never goes under the bar */
-  padding-bottom: var(--footer-total);
+  /* NO padding-bottom - container height already ends at footer's edge */
+}
+
+/* Add bottom margin to last element so content doesn't touch button when scrolled */
+#main-app > *:last-child {
+  margin-bottom: clamp(25px, 5vw, 35px);
 }
 
 
@@ -2161,8 +2166,3 @@ button:focus-visible,
   --footer-safe: env(safe-area-inset-bottom, 0px);
   --footer-total: calc(var(--footer-base) + var(--footer-safe));
 }
-/* Added: ensure scrollable area never hides under fixed bottom bar */
-#main-app { 
-  padding-bottom: var(--footer-total) !important;
-}
-/* marker */ /* #main-app-padding-bottom-added */
