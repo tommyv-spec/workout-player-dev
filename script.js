@@ -1,4 +1,3 @@
-
 /* ============================================================
    Workout App — Unified Script (Audio-First, End-to-End Hooks)
    Date: 2025-10-31
@@ -1629,29 +1628,6 @@ document.addEventListener("DOMContentLoaded", () => {
       resumeTimer();
     }
 
-  (function footerOffsetSync(){
-  const root = document.documentElement;
-  const footer = document.getElementById('bottom-buttons-container');
-
-  function sync(){
-    if (!footer) return;
-    // measure the *real* rendered height (includes padding + safe-area)
-    const h = footer.offsetHeight || 0;
-    root.style.setProperty('--bottom-bar-offset', h + 'px');
-  }
-
-  // initial + on resize/orientation/font/load changes
-    window.addEventListener('DOMContentLoaded', sync);
-    window.addEventListener('load', sync);
-    window.addEventListener('resize', sync);
-    window.addEventListener('orientationchange', sync);
-    // some mobile browsers fire layout changes on visibility toggles
-    document.addEventListener('visibilitychange', sync);
-
-    // call once immediately if DOM is already ready
-    sync();
-  })();
-
   });
 
 
@@ -1776,22 +1752,3 @@ document.addEventListener("DOMContentLoaded", () => {
     if (ma) ma.style.display = "block";
   }
 });
-
-// --- Ensure main content stops above fixed bottom buttons on mobile --- 
-(function(){
-  const root = document.documentElement;
-  function setFooterSpace(){
-    const footer = document.getElementById('bottom-buttons-container');
-    const main = document.getElementById('main-app');
-    if(!footer || !main) return;
-    const h = footer.offsetHeight || 0;
-    // write a runtime variable to be extra safe (covers dynamic zoom/toolbars)
-    root.style.setProperty('--footer-base', h + 'px');
-    // also set explicit padding in case CSS var is cached
-    main.style.paddingBottom = (h) + 'px';
-  }
-  window.addEventListener('resize', setFooterSpace, {passive:true});
-  window.addEventListener('orientationchange', setFooterSpace);
-  document.addEventListener('DOMContentLoaded', setFooterSpace);
-  window.addEventListener('load', setFooterSpace);
-})();
