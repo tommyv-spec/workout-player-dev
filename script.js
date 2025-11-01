@@ -1628,6 +1628,30 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.textContent = "⏸ Pausa";
       resumeTimer();
     }
+
+  (function footerOffsetSync(){
+  const root = document.documentElement;
+  const footer = document.getElementById('bottom-buttons-container');
+
+  function sync(){
+    if (!footer) return;
+    // measure the *real* rendered height (includes padding + safe-area)
+    const h = footer.offsetHeight || 0;
+    root.style.setProperty('--bottom-bar-offset', h + 'px');
+  }
+
+  // initial + on resize/orientation/font/load changes
+    window.addEventListener('DOMContentLoaded', sync);
+    window.addEventListener('load', sync);
+    window.addEventListener('resize', sync);
+    window.addEventListener('orientationchange', sync);
+    // some mobile browsers fire layout changes on visibility toggles
+    document.addEventListener('visibilitychange', sync);
+
+    // call once immediately if DOM is already ready
+    sync();
+  })();
+
   });
 
 
