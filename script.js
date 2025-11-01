@@ -1776,3 +1776,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (ma) ma.style.display = "block";
   }
 });
+
+// --- Ensure main content stops above fixed bottom buttons on mobile --- 
+(function(){
+  const root = document.documentElement;
+  function setFooterSpace(){
+    const footer = document.getElementById('bottom-buttons-container');
+    const main = document.getElementById('main-app');
+    if(!footer || !main) return;
+    const h = footer.offsetHeight || 0;
+    // write a runtime variable to be extra safe (covers dynamic zoom/toolbars)
+    root.style.setProperty('--footer-base', h + 'px');
+    // also set explicit padding in case CSS var is cached
+    main.style.paddingBottom = (h) + 'px';
+  }
+  window.addEventListener('resize', setFooterSpace, {passive:true});
+  window.addEventListener('orientationchange', setFooterSpace);
+  document.addEventListener('DOMContentLoaded', setFooterSpace);
+  window.addEventListener('load', setFooterSpace);
+})();
