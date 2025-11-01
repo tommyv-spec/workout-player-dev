@@ -2161,3 +2161,40 @@ button:focus-visible,
   --footer-safe: env(safe-area-inset-bottom, 0px);
   --footer-total: calc(var(--footer-base) + var(--footer-safe));
 }
+
+/* === FINAL LAYOUT OVERRIDES (mobile-safe, no overlap) ===================== */
+/* Footer height you actually render (button bar). Add safe-area for iOS. */
+:root{
+  --footer-base: 72px; /* actual bar height */
+  --footer-safe: env(safe-area-inset-bottom, 0px);
+  --footer-total: calc(var(--footer-base) + var(--footer-safe));
+}
+
+/* Fixed bottom bar */
+#bottom-buttons-container{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: var(--footer-total);
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 0 16px;
+  z-index: 9999;
+  background: linear-gradient(to top, rgba(0,0,0,.95), rgba(0,0,0,.9) 70%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+/* Main scroll area ends exactly at top of the bar (no padding tricks) */
+#main-app{
+  height: calc(100svh - var(--header-height) - var(--footer-total));
+  height: calc(100dvh - var(--header-height) - var(--footer-total));
+  height: calc(100vh  - var(--header-height) - var(--footer-total));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0 !important; /* make sure no old rule adds extra space */
+}
+
+/* Make sure header truly occupies var(--header-height) */
+header{ height: var(--header-height); flex-shrink: 0; }
+
+/* Avoid body scrolling behind the main-app */
+html, body{ overflow: hidden; }
