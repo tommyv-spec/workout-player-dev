@@ -888,7 +888,7 @@ async function playExercise(index, exercises, resumeTime = null) {
   else if (hasEquipment)      infoText = exercise.tipoDiPeso;
 
   const currentInfo = infoText
-    ? `<div style="font-size:16px;font-weight:600;margin-top:8px;color:#FFD700;">${infoText}</div>`
+    ? `<div style="font-size:16px;font-weight:600;margin-top:8px;color:#B0B0B0;">${infoText}</div>`
     : "";
 
   // --- CURRENT EXERCISE DISPLAY ---
@@ -914,7 +914,7 @@ async function playExercise(index, exercises, resumeTime = null) {
 
   document.getElementById("exercise-name").innerHTML = `
     <div style="font-size:22px;font-weight:800;letter-spacing:.5px;">${exercise.name}</div>
-    <div style="font-size:15px;font-weight:600;color:#FFD700;margin-top:4px;">${infoText}</div>
+    <div style="font-size:15px;font-weight:600;color:#B0B0B0;margin-top:4px;">${infoText}</div>
   `;
 
 
@@ -1316,9 +1316,9 @@ function updateWorkoutPreview() {
 
   const grid = document.getElementById("exercise-grid");
   const sectionConfigs = [
-    { key: 'blocco1', title: 'BLOCCO 1', color: '#27AE60', icon: '' },
-    { key: 'blocco2', title: 'BLOCCO 2', color: '#27AE60', icon: '' },
-    { key: 'blocco3', title: 'BLOCCO 3', color: '#27AE60', icon: '' }
+    { key: 'blocco1', title: 'BLOCCO 1', color: '#7D7D7D', icon: '' },
+    { key: 'blocco2', title: 'BLOCCO 2', color: '#7D7D7D', icon: '' },
+    { key: 'blocco3', title: 'BLOCCO 3', color: '#7D7D7D', icon: '' }
   ];
 
   sectionConfigs.forEach(config => {
@@ -1472,7 +1472,7 @@ function buildStartPointSelector() {
     const option = document.createElement('option');
     option.value = block.index;              // keep internal A1, A2, etc.
     option.dataset.realName = block.name;    // store the original
-    option.textContent = `sesh${idx + 1}`;   // display simplified label
+    option.textContent = `Blocco ${idx + 1}`;   // display block number
     phaseSelect.appendChild(option);
   });
 
@@ -1627,6 +1627,29 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.textContent = "⏸ Pausa";
       resumeTimer();
     }
+
+  (function footerOffsetSync(){
+  const root = document.documentElement;
+  const footer = document.getElementById('bottom-buttons-container');
+
+  function sync(){
+    if (!footer) return;
+    // measure the *real* rendered height (includes padding + safe-area)
+    const h = footer.offsetHeight || 0;
+    root.style.setProperty('--bottom-bar-offset', h + 'px');
+  }
+
+  // initial + on resize/orientation/font/load changes
+    window.addEventListener('DOMContentLoaded', sync);
+    window.addEventListener('load', sync);
+    window.addEventListener('resize', sync);
+    window.addEventListener('orientationchange', sync);
+    // some mobile browsers fire layout changes on visibility toggles
+    document.addEventListener('visibilitychange', sync);
+
+    // call once immediately if DOM is already ready
+    sync();
+  })();
 
   });
 
