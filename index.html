@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Workout App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    /* Header adjustments for login button */
+    header {
+      display: grid !important;
+      grid-template-columns: 1fr auto 1fr !important;
+      align-items: center !important;
+      gap: 15px !important;
+    }
+
+    header img {
+      grid-column: 2 !important;
+      justify-self: center !important;
+      height: auto !important;
+      width: auto !important;
+      max-width: 55vw !important;
+      max-height: 12vh !important;
+      position: relative !important;
+      z-index: 1;
+    }
+
+    /* LOGIN BUTTON IN HEADER */
+    .header-login-btn {
+      grid-column: 3 !important;
+      justify-self: end !important;
+      position: relative !important;
+      padding: 10px 20px;
+      background: #FFFFFF;
+      border: 2px solid #FFFFFF;
+      border-radius: 10px;
+      color: #000000;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .header-login-btn:hover {
+      background: #B0B0B0;
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+    }
+
+    .header-login-btn:active {
+      transform: scale(0.98);
+    }
+
+    .header-login-btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* DASHBOARD BUTTON IN HEADER */
+    .header-dashboard-btn {
+      grid-column: 3 !important;
+      justify-self: end !important;
+      position: relative !important;
+      padding: 10px 20px;
+      background: #FFFFFF;
+      border: 2px solid #FFFFFF;
+      border-radius: 10px;
+      color: #000000;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+      z-index: 100;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .header-dashboard-btn:hover {
+      background: #B0B0B0;
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+    }
+
+    .header-dashboard-btn:active {
+      transform: scale(0.98);
+    }
+
+    .header-dashboard-btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* AUTH MODAL (Login/Signup) */
+    .auth-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .auth-modal.active {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .auth-modal-content {
+      background: linear-gradient(135deg, rgba(77, 77, 77, 0.95), rgba(77, 77, 77, 0.8));
+      border: 2px solid #7D7D7D;
+      border-radius: 20px;
+      padding: 45px 25px 25px 25px;
+      width: 100%;
+      max-width: 350px;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      animation: slideUp 0.4s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .auth-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 300;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      z-index: 100;
+      font-family: Arial, sans-serif;
+      padding: 0;
+    }
+
+    .auth-modal-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: scale(1.08);
+    }
+
+    .auth-modal-close:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-view {
+      display: none;
+    }
+
+    .auth-view.active {
+      display: block;
+    }
+
+    .auth-modal h3 {
+      color: #FFFFFF;
+      font-size: 26px;
+      text-align: center;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+
+    .auth-modal input {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #7D7D7D;
+      border-radius: 10px;
+      color: #FFFFFF;
+      font-size: 15px;
+      font-family: 'Staatliches', sans-serif;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .auth-modal input::placeholder {
+      color: #B0B0B0;
+      opacity: 0.8;
+    }
+
+    .auth-modal input:focus {
+      outline: none;
+      border-color: #FFFFFF;
+      background: rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-modal button:not(.auth-modal-close) {
+      width: 100%;
+      padding: 12px;
+      background: #FFFFFF;
+      color: #000000;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: 'Staatliches', sans-serif;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+    }
+
+    .auth-modal button:not(.auth-modal-close):hover {
+      background: #B0B0B0;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .auth-modal button:not(.auth-modal-close):active {
+      transform: translateY(0);
+    }
+
+    .auth-modal button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .auth-toggle {
+      text-align: center;
+      margin-top: 15px;
+      color: #B0B0B0;
+      font-size: 14px;
+      font-family: 'Staatliches', sans-serif;
+      letter-spacing: 0.5px;
+    }
+
+    .auth-toggle a {
+      color: #FFFFFF;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .auth-toggle a:hover {
+      text-decoration: underline;
+    }
+
+    .auth-message {
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 13px;
+      font-family: 'Staatliches', sans-serif;
+      letter-spacing: 0.5px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .auth-message.error {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid #ff6b6b;
+      color: #ff6b6b;
+    }
+
+    .auth-message.success {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid #4CAF50;
+      color: #4CAF50;
+    }
+
+    .auth-message.info {
+      background: rgba(255, 215, 0, 0.2);
+      border: 1px solid #FFD700;
+      color: #FFD700;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .header-login-btn,
+      .header-dashboard-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+  <header>
+    <img src="https://drive.google.com/thumbnail?id=1va6OkGp9yAHDJBfeDM3npwqlJJoLUh5C" alt="Logo" />
+    <audio controls src="https://drive.google.com/uc?export=download&id=1L8OmsZjgrVvHR0vyfSDhaueR1rweGtH7"></audio>
+    
+    <!-- LOGIN BUTTON (shown when logged out) -->
+    <button class="header-login-btn" id="header-login-btn" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      <span>Login</span>
+    </button>
+    
+    <!-- DASHBOARD BUTTON (shown when logged in) -->
+    <a href="dashboard.html" class="header-dashboard-btn" id="header-dashboard-btn" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Dashboard</span>
+    </a>
+  </header>
+
+  <!-- AUTH MODAL (Login/Signup) -->
+  <div class="auth-modal" id="auth-modal">
+    <div class="auth-modal-content">
+      <button class="auth-modal-close" id="auth-modal-close">×</button>
+      
+      <!-- LOGIN VIEW -->
+      <div class="auth-view active" id="login-view">
+        <h3>Login</h3>
+        <input type="email" placeholder="Email" id="login-email" autocomplete="email">
+        <input type="password" placeholder="Password" id="login-password" autocomplete="current-password">
+        <button id="login-button">Accedi</button>
+        <div class="auth-message" id="login-message"></div>
+        <div class="auth-toggle">
+          Non hai un account? <a id="show-signup">Registrati</a>
+        </div>
+      </div>
+      
+      <!-- SIGNUP VIEW -->
+      <div class="auth-view" id="signup-view">
+        <h3>Registrati</h3>
+        <input type="text" placeholder="Nome Completo" id="signup-name" autocomplete="name">
+        <input type="text" placeholder="Username" id="signup-username" autocomplete="username">
+        <input type="email" placeholder="Email" id="signup-email" autocomplete="email">
+        <input type="password" placeholder="Password (min 6 caratteri)" id="signup-password" autocomplete="new-password" minlength="6">
+        <input type="password" placeholder="Conferma Password" id="signup-password-confirm" autocomplete="new-password" minlength="6">
+        <button id="signup-button">Crea Account</button>
+        <div class="auth-message" id="signup-message"></div>
+        <div class="auth-toggle">
+          Hai già un account? <a id="show-login">Accedi</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="page-safe screen">
+    <!-- TRAINING SELECTOR -->
+    <div id="training-selector" data-reach-bottom="true">
+      <div class="training-selector-container">
+        <p class="selector-instruction">Tocca per selezionare il tuo focus di allenamento</p>
+        <div class="training-image-wrapper">
+          <img src="https://drive.google.com/thumbnail?id=1M9SZSKuOO6FNnM2pi0ECOiHGv1SDFxYQ" alt="Training Options" class="training-base-image" />
+          
+          <div class="training-zone nutrition-zone" data-training="nutrition">
+            <span class="zone-label">NUTRITION</span>
+            <div class="ripple-container">
+              <div class="ripple-ring ripple-1"></div>
+              <div class="ripple-ring ripple-2"></div>
+              <span class="tap-text">TOCCA</span>
+            </div>
+          </div>
+          
+          <div class="training-zone aerobic-zone" data-training="aerobic">
+            <span class="zone-label">AEROBIC<br>TRAINING</span>
+            <div class="ripple-container">
+              <div class="ripple-ring ripple-1"></div>
+              <div class="ripple-ring ripple-2"></div>
+              <span class="tap-text">TOCCA</span>
+            </div>
+          </div>
+          
+          <div class="training-zone muscle-zone" data-training="muscle">
+            <span class="zone-label">MORE<br>MUSCLE</span>
+            <div class="ripple-container">
+              <div class="ripple-ring ripple-1"></div>
+              <div class="ripple-ring ripple-2"></div>
+              <span class="tap-text">TOCCA</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Sheet -->
+      <div id="training-bottom-sheet" class="bottom-sheet">
+        <div class="bottom-sheet-overlay"></div>
+        <div class="bottom-sheet-panel">
+          <div class="bottom-sheet-handle"></div>
+          <div class="bottom-sheet-content">
+            <h3 id="sheet-title">Nutrizione</h3>
+            
+            <div class="carousel-container">
+              <div class="carousel-wrapper">
+                <div class="carousel-track" id="carousel-track"></div>
+                <!-- Overlay for main text when expanded -->
+                <div class="carousel-text-overlay" id="carousel-text-overlay" style="display: none;">
+                  <p id="overlay-text"></p>
+                </div>
+              </div>
+              <button class="carousel-btn prev" id="carousel-prev" aria-label="Previous">‹</button>
+              <button class="carousel-btn next" id="carousel-next" aria-label="Next">›</button>
+              <div class="carousel-dots" id="carousel-dots"></div>
+            </div>
+            
+            <!-- Main text that syncs with carousel -->
+            <p id="sheet-main-text" class="sheet-main-text">Testo principale</p>
+            
+            <button id="details-toggle-btn" class="details-toggle-btn">
+              <span>Altri dettagli</span>
+              <span class="toggle-icon">↓</span>
+            </button>
+            
+            <div id="details-section" class="details-section" style="display: none;">
+              <div class="detail-item" id="detail-1">
+                <h4>Traccia Macronutrienti</h4>
+                <p>Monitora proteine, carboidrati e grassi per risultati ottimali</p>
+              </div>
+              <div class="detail-item" id="detail-2">
+                <h4>Piano Personalizzato</h4>
+                <p>Ricette e piani pasto basati sui tuoi obiettivi specifici</p>
+              </div>
+              <div class="detail-item" id="detail-3">
+                <h4>Progressi Visibili</h4>
+                <p>Analisi dettagliata delle tue abitudini alimentari nel tempo</p>
+              </div>
+            </div>
+            
+            <div class="sheet-actions">
+              <button id="sheet-start-btn" class="sheet-btn primary">Inizia Allenamento</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div><!-- /.app -->
+
+  <audio id="beep-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+  <audio id="transition-sound" src="https://actions.google.com/sounds/v1/emergency/emergency_siren_short_burst.ogg" preload="auto"></audio>
+
+  <script src="viewport.js"></script>
+  <script src="script.js"></script>
+  <script src="auth.js"></script>
+  
+  <script>
+    // ═══════════════════════════════════════════════════════════════════════════
+    // EMAIL CONFIRMATION HANDLER - FIX 3
+    // Gestisce il redirect quando l'utente clicca il link nell'email
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    async function handleEmailConfirmation() {
+        // Estrai i parametri dall'URL hash (#access_token=...)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        // Se ci sono tokens e questo è un signup/recovery/magiclink
+        if (accessToken && (type === 'signup' || type === 'recovery' || type === 'magiclink')) {
+            console.log('✅ Email confirmation detected, type:', type);
+            
+            try {
+                // Autentica l'utente usando i tokens dall'URL
+                const { data, error } = await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                });
+                
+                if (error) {
+                    console.error('Error setting session:', error);
+                    alert('Errore nella conferma email: ' + error.message);
+                    return;
+                }
+                
+                if (data.user) {
+                    console.log('✅ Email confirmed successfully!', data.user.email);
+                    
+                    // Salva info utente in localStorage
+                    localStorage.setItem('loggedUser', data.user.email.toLowerCase());
+                    localStorage.setItem('userName', data.user.user_metadata?.username || 'User');
+                    localStorage.setItem('userFullName', data.user.user_metadata?.full_name || 'User');
+                    
+                    // Pulisci l'URL (rimuovi i tokens per sicurezza)
+                    const cleanUrl = window.location.pathname + window.location.search;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                    
+                    // Redirect alla dashboard
+                    console.log('Redirecting to dashboard...');
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (error) {
+                console.error('Exception during email confirmation:', error);
+                alert('Errore durante la conferma: ' + error.message);
+            }
+        }
+    }
+    
+    // Esegui l'handler quando la pagina carica
+    if (window.supabase) {
+        handleEmailConfirmation();
+    } else {
+        window.addEventListener('load', () => {
+            setTimeout(handleEmailConfirmation, 500);
+        });
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // AUTH MODAL CONTROLS
+    const authModal = document.getElementById('auth-modal');
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    const headerDashboardBtn = document.getElementById('header-dashboard-btn');
+    const modalCloseBtn = document.getElementById('auth-modal-close');
+    
+    // Views
+    const loginView = document.getElementById('login-view');
+    const signupView = document.getElementById('signup-view');
+    
+    // Login elements
+    const loginEmailInput = document.getElementById('login-email');
+    const loginPasswordInput = document.getElementById('login-password');
+    const loginButton = document.getElementById('login-button');
+    const loginMessage = document.getElementById('login-message');
+    
+    // Signup elements
+    const signupNameInput = document.getElementById('signup-name');
+    const signupUsernameInput = document.getElementById('signup-username');
+    const signupEmailInput = document.getElementById('signup-email');
+    const signupPasswordInput = document.getElementById('signup-password');
+    const signupPasswordConfirmInput = document.getElementById('signup-password-confirm');
+    const signupButton = document.getElementById('signup-button');
+    const signupMessage = document.getElementById('signup-message');
+    
+    // Toggle buttons
+    const showSignupBtn = document.getElementById('show-signup');
+    const showLoginBtn = document.getElementById('show-login');
+    
+    const sheetStartBtn = document.getElementById('sheet-start-btn');
+
+    // Check if user is already logged in
+    (async () => {
+      const isLoggedIn = await checkAuth();
+      if (isLoggedIn) {
+        headerDashboardBtn.style.display = 'flex';
+        headerLoginBtn.style.display = 'none';
+      } else {
+        headerLoginBtn.style.display = 'flex';
+        headerDashboardBtn.style.display = 'none';
+      }
+    })();
+
+    // Open modal (show login by default)
+    function openAuthModal() {
+      authModal.classList.add('active');
+      showLogin();
+      setTimeout(() => loginEmailInput.focus(), 300);
+    }
+
+    headerLoginBtn.addEventListener('click', openAuthModal);
+
+    // Close modal
+    modalCloseBtn.addEventListener('click', () => {
+      authModal.classList.remove('active');
+      clearMessages();
+    });
+
+    // Close on overlay click
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) {
+        authModal.classList.remove('active');
+        clearMessages();
+      }
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && authModal.classList.contains('active')) {
+        authModal.classList.remove('active');
+        clearMessages();
+      }
+    });
+
+    // Toggle views
+    function showLogin() {
+      loginView.classList.add('active');
+      signupView.classList.remove('active');
+      clearMessages();
+    }
+
+    function showSignup() {
+      signupView.classList.add('active');
+      loginView.classList.remove('active');
+      clearMessages();
+    }
+
+    showSignupBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showSignup();
+      setTimeout(() => signupNameInput.focus(), 100);
+    });
+
+    showLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLogin();
+      setTimeout(() => loginEmailInput.focus(), 100);
+    });
+
+    // Clear all messages
+    function clearMessages() {
+      loginMessage.style.display = 'none';
+      signupMessage.style.display = 'none';
+      loginMessage.textContent = '';
+      signupMessage.textContent = '';
+    }
+
+    // Show message helper
+    function showMessage(element, text, type) {
+      element.textContent = text;
+      element.className = `auth-message ${type}`;
+      element.style.display = 'block';
+    }
+
+    // LOGIN HANDLER
+    async function handleLogin(e) {
+      if (e) e.preventDefault();
+      
+      const email = loginEmailInput.value.trim();
+      const password = loginPasswordInput.value.trim();
+
+      if (!email || !password) {
+        showMessage(loginMessage, "Inserisci email e password", "error");
+        return;
+      }
+
+      showMessage(loginMessage, "Accesso in corso...", "info");
+      loginButton.disabled = true;
+
+      const result = await signIn(email, password);
+      
+      if (result.success) {
+        showMessage(loginMessage, "Accesso riuscito!", "success");
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 500);
+      } else {
+        showMessage(loginMessage, result.error || "Errore durante il login", "error");
+        loginButton.disabled = false;
+      }
+    }
+
+    loginButton.addEventListener('click', handleLogin);
+    loginPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    loginEmailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loginPasswordInput.focus();
+    });
+
+    // SIGNUP HANDLER
+    async function handleSignup(e) {
+      if (e) e.preventDefault();
+      
+      const name = signupNameInput.value.trim();
+      const username = signupUsernameInput.value.trim();
+      const email = signupEmailInput.value.trim();
+      const password = signupPasswordInput.value.trim();
+      const passwordConfirm = signupPasswordConfirmInput.value.trim();
+
+      if (!name || !username || !email || !password || !passwordConfirm) {
+        showMessage(signupMessage, "Compila tutti i campi", "error");
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage(signupMessage, "La password deve essere di almeno 6 caratteri", "error");
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        showMessage(signupMessage, "Le password non corrispondono", "error");
+        return;
+      }
+
+      showMessage(signupMessage, "Creazione account in corso...", "info");
+      signupButton.disabled = true;
+
+      const result = await signUp(email, password, name, username);
+      
+      if (result.success) {
+        showMessage(signupMessage, "✅ Account creato con successo!", "success");
+        
+        // Redirect to dashboard immediately
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 500);
+      } else {
+        showMessage(signupMessage, result.error || "Errore durante la registrazione", "error");
+        signupButton.disabled = false;
+      }
+    }
+
+    signupButton.addEventListener('click', handleSignup);
+    signupPasswordConfirmInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSignup();
+    });
+    signupPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') signupPasswordConfirmInput.focus();
+    });
+    signupEmailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') signupPasswordInput.focus();
+    });
+    signupUsernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') signupEmailInput.focus();
+    });
+    signupNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') signupUsernameInput.focus();
+    });
+
+    // TRAINING SELECTOR: When "Inizia Allenamento" is clicked, open auth modal
+    sheetStartBtn?.addEventListener('click', () => {
+      // Store selected training
+      const selectedTraining = sessionStorage.getItem('selectedTraining');
+      
+      // Close bottom sheet
+      document.getElementById('training-bottom-sheet')?.classList.remove('active');
+      
+      // Open auth modal
+      openAuthModal();
+    });
+  </script>
+</body>
+</html>
