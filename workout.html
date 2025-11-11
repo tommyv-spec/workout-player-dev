@@ -11,22 +11,27 @@
   <style>
     /* Header grid layout for button positioning */
     header {
-      display: grid !important;
-      grid-template-columns: 1fr auto 1fr !important;
-      align-items: center !important;
-      gap: 15px !important;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 15px;
     }
 
     header img {
-      grid-column: 2 !important;
-      justify-self: center !important;
+      grid-column: 2;
+      justify-self: center;
+    }
+
+    /* Hide header during workout */
+    body.workout-active header {
+      display: none !important;
     }
 
     /* DASHBOARD BUTTON IN HEADER */
     .header-dashboard-btn {
-      grid-column: 3 !important;
-      justify-self: end !important;
-      position: relative !important;
+      grid-column: 3;
+      justify-self: end;
+      position: relative;
       padding: 10px 20px;
       background: #FFFFFF;
       border: 2px solid #FFFFFF;
@@ -233,7 +238,7 @@
             </div>
 
             <button id="reset-start-point" style="padding: 8px 15px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid #7D7D7D; border-radius: 8px; cursor: pointer; font-size: 13px;">
-               Reset a inizio workout
+              ⟲ Reset a inizio workout
             </button>
           </div>
         </div>
@@ -298,9 +303,9 @@
       
         <!-- 5. PAUSA E NAVIGAZIONE -->
         <div id="controls-container">
-          <button id="prev-exercise-button" class="nav-btn" title="Esercizio precedente">⏮️</button>
+          <button id="prev-exercise-button" class="nav-btn" title="Esercizio precedente">⮪️</button>
           <button id="pause-button">⏸ Pausa</button>
-          <button id="next-exercise-button" class="nav-btn" title="Esercizio successivo">⏭️</button>
+          <button id="next-exercise-button" class="nav-btn" title="Esercizio successivo">⮫️</button>
           <button id="settings-button" class="settings-btn" title="Impostazioni">⚙️</button>
         </div>
 
@@ -315,7 +320,7 @@
               <option value="bip">Beep</option>
               <option value="none">Nessun suono</option>
             </select>
-            <button id="exit-workout-button" style="background: #e74c3c; margin-top: 15px;"> Termina Allenamento</button>
+            <button id="exit-workout-button" style="background: #e74c3c; margin-top: 15px;">🛑 Termina Allenamento</button>
             <button id="close-settings">Chiudi</button>
           </div>
         </div>
@@ -346,14 +351,6 @@
     if (!localStorage.getItem('loggedUser')) {
       window.location.href = 'index.html';
     }
-
-    // Auto-load user data on page load
-    window.addEventListener('DOMContentLoaded', () => {
-      const username = localStorage.getItem('loggedUser');
-      if (username) {
-        loadUserData(username);
-      }
-    });
   </script>
   <script src="viewport.js"></script>
 </body>

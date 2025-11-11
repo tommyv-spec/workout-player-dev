@@ -1480,6 +1480,9 @@ function exitWorkout() {
   document.body.style.width = "";
   document.body.style.height = "";
 
+  // Remove class to show header again
+  document.body.classList.remove('workout-active');
+
   const header = document.querySelector("header");
   const setup = document.getElementById("setup-screen");
   const startBtn = document.getElementById("start-button-bottom");
@@ -1535,6 +1538,9 @@ function startWorkout() {
   document.body.style.width = "100%";
   document.body.style.height = "100%";
 
+  // Add class to hide header during workout
+  document.body.classList.add('workout-active');
+
   // Keep screen on during workout
   requestWakeLock();
 
@@ -1580,6 +1586,9 @@ async function playExercise(index, exercises, resumeTime = null) {
     document.body.style.position = "";
     document.body.style.width = "";
     document.body.style.height = "";
+
+    // Remove class to show header again
+    document.body.classList.remove('workout-active');
 
     const header = document.querySelector("header");
     const setup = document.getElementById("setup-screen");
@@ -1866,7 +1875,7 @@ function login() {
     return;
   }
 
-  fetch(`https://script.google.com/macros/s/AKfycbzJ6uS35QkkBdft6dnh3xDbb_MAesyzrN_Otlc2mHyHykv2IGXPZvxZGOYOgv8q8AQt/exec?username=${username}&password=${password}`)
+  fetch(`https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec?username=${username}&password=${password}`)
     .then(res => res.json())
     .then(data => {
       if (data.status === "success") {
@@ -1915,15 +1924,28 @@ function logout() {
 }
 
 function loadUserData(username) {
-  fetch("https://script.google.com/macros/s/AKfycbzJ6uS35QkkBdft6dnh3xDbb_MAesyzrN_Otlc2mHyHykv2IGXPZvxZGOYOgv8q8AQt/exec")
-    .then(res => res.json())
+  console.log(`📥 Loading data for user: ${username}`);
+  
+  fetch("https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec")
+    .then(res => {
+      console.log(`✅ Fetch response received. Status: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
     .then(data => {
+      console.log("📦 Data received:", data);
       workouts = data.workouts;
+      console.log(`💪 Total workouts available: ${Object.keys(workouts || {}).length}`);
       
       // ✅ UPDATED: Handle new userWorkouts structure with scadenza and workouts array
       const userData = data.userWorkouts[username] || { scadenza: "", workouts: [] };
       const userWorkouts = userData.workouts || [];
       const scadenza = userData.scadenza || "";
+      
+      console.log(`👤 User workouts for ${username}:`, userWorkouts);
+      console.log(`📅 Scadenza: ${scadenza || "N/A"}`);
       
       // Optional: Log scadenza for debugging or future use
       if (scadenza) {
@@ -1931,7 +1953,12 @@ function loadUserData(username) {
       }
       
       const select = document.getElementById("workoutSelect");
-      if (!select) return;
+      if (!select) {
+        console.error("❌ workoutSelect element not found!");
+        return;
+      }
+      
+      console.log("🔄 Populating workout selector...");
       select.innerHTML = "";
 
       userWorkouts.forEach((name, i) => {
@@ -1940,21 +1967,36 @@ function loadUserData(username) {
         option.dataset.realName = name;       // keep original if you ever need it
         option.textContent = `Sesh ${i + 1}`;  // what the user sees (sesh1, sesh2, …)
         select.appendChild(option);
+        console.log(`  ➕ Added workout: ${name} (Sesh ${i + 1})`);
       });
 
+      console.log(`✅ Populated ${select.options.length} workouts in selector`);
 
       if (select.options.length > 0) {
         select.selectedIndex = 0;
         selectedWorkout = workouts[select.value];
-        const __topStart2 = document.getElementById("start-button"); if (__topStart2) __topStart2.disabled = false;
-        const __bottomStart2 = document.getElementById("start-button-bottom"); if (__bottomStart2) __bottomStart2.disabled = false;
+        console.log(`🎯 Selected workout:`, selectedWorkout?.name || select.value);
+        
+        const __topStart2 = document.getElementById("start-button"); 
+        if (__topStart2) __topStart2.disabled = false;
+        const __bottomStart2 = document.getElementById("start-button-bottom"); 
+        if (__bottomStart2) __bottomStart2.disabled = false;
+        
         updateWorkoutPreview();
+      } else {
+        console.warn("⚠️ No workouts found for user");
       }
 
       select.addEventListener("change", () => {
         selectedWorkout = workouts[select.value] || {};
+        console.log(`🔄 Workout changed to: ${select.value}`);
         updateWorkoutPreview();
       });
+    })
+    .catch(error => {
+      console.error("❌ Error loading user data:", error);
+      console.error("Error details:", error.message);
+      alert(`Failed to load workout data: ${error.message}\n\nPlease check your internet connection and try refreshing the page.`);
     });
 }
 
