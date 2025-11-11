@@ -751,16 +751,27 @@ function startSequentialAnimation() {
   }, 500);
 }
 
-// Initialize on DOM load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+// Initialize on DOM load - ONLY on index.html (login page)
+// Check if we're on the index/login page before initializing training animations
+const isIndexPage = window.location.pathname === '/' || 
+                    window.location.pathname === '/index.html' || 
+                    window.location.pathname.endsWith('/index.html');
+
+if (isIndexPage) {
+  console.log('✅ Index page detected - initializing training selector animations');
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initTrainingSelector();
+      // Small delay to ensure DOM is fully ready
+      setTimeout(startSequentialAnimation, 100);
+    });
+  } else {
     initTrainingSelector();
-    // Small delay to ensure DOM is fully ready
     setTimeout(startSequentialAnimation, 100);
-  });
+  }
 } else {
-  initTrainingSelector();
-  setTimeout(startSequentialAnimation, 100);
+  console.log('ℹ️ Not on index page - skipping training selector animations');
 }
 
 window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
