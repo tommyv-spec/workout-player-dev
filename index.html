@@ -367,6 +367,30 @@
         <div class="auth-toggle">
           Non hai un account? <a id="show-signup">Registrati</a>
         </div>
+        <div class="auth-toggle" style="margin-top: 10px;">
+          <a id="show-forgot-password">Password dimenticata?</a>
+        </div>
+      </div>
+      
+      <!-- FORGOT PASSWORD VIEW -->
+      <div class="auth-view" id="forgot-password-view">
+        <h3>Recupera Password</h3>
+        <p style="font-size: 14px; margin-bottom: 15px; color: #ccc;">Inserisci la tua email e ti invieremo un link per reimpostare la password.</p>
+        <input type="email" placeholder="Email" id="forgot-email" autocomplete="email">
+        <button id="forgot-button">Invia Link</button>
+        <div class="auth-message" id="forgot-message"></div>
+        <div class="auth-toggle">
+          <a id="back-to-login">Torna al Login</a>
+        </div>
+      </div>
+      
+      <!-- RESET PASSWORD VIEW -->
+      <div class="auth-view" id="reset-password-view">
+        <h3>Nuova Password</h3>
+        <input type="password" placeholder="Nuova Password (min 6 caratteri)" id="reset-password" autocomplete="new-password" minlength="6">
+        <input type="password" placeholder="Conferma Nuova Password" id="reset-password-confirm" autocomplete="new-password" minlength="6">
+        <button id="reset-button">Cambia Password</button>
+        <div class="auth-message" id="reset-message"></div>
       </div>
       
       <!-- SIGNUP VIEW -->
@@ -556,6 +580,8 @@
     // Views
     const loginView = document.getElementById('login-view');
     const signupView = document.getElementById('signup-view');
+    const forgotPasswordView = document.getElementById('forgot-password-view');
+    const resetPasswordView = document.getElementById('reset-password-view');
     
     // Login elements
     const loginEmailInput = document.getElementById('login-email');
@@ -572,9 +598,22 @@
     const signupButton = document.getElementById('signup-button');
     const signupMessage = document.getElementById('signup-message');
     
+    // Forgot password elements
+    const forgotEmailInput = document.getElementById('forgot-email');
+    const forgotButton = document.getElementById('forgot-button');
+    const forgotMessage = document.getElementById('forgot-message');
+    
+    // Reset password elements
+    const resetPasswordInput = document.getElementById('reset-password');
+    const resetPasswordConfirmInput = document.getElementById('reset-password-confirm');
+    const resetButton = document.getElementById('reset-button');
+    const resetMessage = document.getElementById('reset-message');
+    
     // Toggle buttons
     const showSignupBtn = document.getElementById('show-signup');
     const showLoginBtn = document.getElementById('show-login');
+    const showForgotPasswordBtn = document.getElementById('show-forgot-password');
+    const backToLoginBtn = document.getElementById('back-to-login');
     
     const sheetStartBtn = document.getElementById('sheet-start-btn');
 
@@ -625,12 +664,32 @@
     function showLogin() {
       loginView.classList.add('active');
       signupView.classList.remove('active');
+      forgotPasswordView.classList.remove('active');
+      resetPasswordView.classList.remove('active');
       clearMessages();
     }
 
     function showSignup() {
       signupView.classList.add('active');
       loginView.classList.remove('active');
+      forgotPasswordView.classList.remove('active');
+      resetPasswordView.classList.remove('active');
+      clearMessages();
+    }
+    
+    function showForgotPassword() {
+      forgotPasswordView.classList.add('active');
+      loginView.classList.remove('active');
+      signupView.classList.remove('active');
+      resetPasswordView.classList.remove('active');
+      clearMessages();
+    }
+    
+    function showResetPassword() {
+      resetPasswordView.classList.add('active');
+      loginView.classList.remove('active');
+      signupView.classList.remove('active');
+      forgotPasswordView.classList.remove('active');
       clearMessages();
     }
 
@@ -645,13 +704,29 @@
       showLogin();
       setTimeout(() => loginEmailInput.focus(), 100);
     });
+    
+    showForgotPasswordBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showForgotPassword();
+      setTimeout(() => forgotEmailInput.focus(), 100);
+    });
+    
+    backToLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLogin();
+      setTimeout(() => loginEmailInput.focus(), 100);
+    });
 
     // Clear all messages
     function clearMessages() {
       loginMessage.style.display = 'none';
       signupMessage.style.display = 'none';
+      forgotMessage.style.display = 'none';
+      resetMessage.style.display = 'none';
       loginMessage.textContent = '';
       signupMessage.textContent = '';
+      forgotMessage.textContent = '';
+      resetMessage.textContent = '';
     }
 
     // Show message helper
@@ -756,6 +831,110 @@
     signupNameInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') signupUsernameInput.focus();
     });
+
+    // FORGOT PASSWORD HANDLER
+    async function handleForgotPassword(e) {
+      if (e) e.preventDefault();
+      
+      const email = forgotEmailInput.value.trim();
+      
+      if (!email) {
+        showMessage(forgotMessage, "Inserisci la tua email", "error");
+        return;
+      }
+      
+      showMessage(forgotMessage, "Invio email in corso...", "info");
+      forgotButton.disabled = true;
+      
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/index.html'
+        });
+        
+        if (error) {
+          showMessage(forgotMessage, error.message, "error");
+          forgotButton.disabled = false;
+        } else {
+          showMessage(forgotMessage, "✅ Email inviata! Controlla la tua casella di posta.", "success");
+          forgotEmailInput.value = '';
+          // Keep button disabled to prevent spam
+        }
+      } catch (error) {
+        showMessage(forgotMessage, "Errore durante l'invio", "error");
+        forgotButton.disabled = false;
+      }
+    }
+    
+    forgotButton.addEventListener('click', handleForgotPassword);
+    forgotEmailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleForgotPassword();
+    });
+
+    // RESET PASSWORD HANDLER
+    async function handleResetPassword(e) {
+      if (e) e.preventDefault();
+      
+      const password = resetPasswordInput.value.trim();
+      const passwordConfirm = resetPasswordConfirmInput.value.trim();
+      
+      if (!password || !passwordConfirm) {
+        showMessage(resetMessage, "Compila tutti i campi", "error");
+        return;
+      }
+      
+      if (password.length < 6) {
+        showMessage(resetMessage, "La password deve essere di almeno 6 caratteri", "error");
+        return;
+      }
+      
+      if (password !== passwordConfirm) {
+        showMessage(resetMessage, "Le password non corrispondono", "error");
+        return;
+      }
+      
+      showMessage(resetMessage, "Aggiornamento password...", "info");
+      resetButton.disabled = true;
+      
+      try {
+        const { error } = await supabase.auth.updateUser({
+          password: password
+        });
+        
+        if (error) {
+          showMessage(resetMessage, error.message, "error");
+          resetButton.disabled = false;
+        } else {
+          showMessage(resetMessage, "✅ Password aggiornata con successo!", "success");
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 1500);
+        }
+      } catch (error) {
+        showMessage(resetMessage, "Errore durante l'aggiornamento", "error");
+        resetButton.disabled = false;
+      }
+    }
+    
+    resetButton.addEventListener('click', handleResetPassword);
+    resetPasswordConfirmInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleResetPassword();
+    });
+    resetPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') resetPasswordConfirmInput.focus();
+    });
+    
+    // Check for password reset token in URL
+    (async function() {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+      
+      if (type === 'recovery') {
+        // User clicked password reset link
+        authModal.classList.add('active');
+        showResetPassword();
+        setTimeout(() => resetPasswordInput.focus(), 300);
+      }
+    })();
 
     // TRAINING SELECTOR: When "Inizia Allenamento" is clicked, open auth modal
     sheetStartBtn?.addEventListener('click', () => {
