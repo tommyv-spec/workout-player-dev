@@ -19,6 +19,7 @@ let isPaused = false;
 let savedTimeLeft = null;
 let lastSpeakTime = 0;
 let currentSpeakId = 0;
+let wakeLock = null; // Screen wake lock to keep screen on during workout
 
 /* -------------------- Configuration Constants -------------------- */
 // Viewport metric update delays (iOS Safari needs multiple passes for accurate measurements)
@@ -55,6 +56,89 @@ ttsAudio.playsInline = true;
 ttsAudio.setAttribute("playsinline", "");
 ttsAudio.setAttribute("webkit-playsinline", "");
 document.body.appendChild(ttsAudio);
+
+/* -------------------- Wake Lock (Keep Screen On) -------------------- */
+/**
+ * Request screen wake lock to prevent screen from turning off during workout
+ */
+async function requestWakeLock() {
+  try {
+    // Check if Wake Lock API is supported
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('✅ Screen wake lock activated - screen will stay on');
+      
+      // Listen for wake lock release
+      wakeLock.addEventListener('release', () => {
+        console.log('🔓 Wake lock released');
+      });
+    } else {
+      console.log('⚠️ Wake Lock API not supported on this browser');
+      // Fallback: iOS Safari doesn't support Wake Lock API
+      // But we can use a video element trick
+      enableIOSScreenWakeLock();
+    }
+  } catch (err) {
+    console.error('❌ Failed to activate wake lock:', err);
+    // Try iOS fallback
+    enableIOSScreenWakeLock();
+  }
+}
+
+/**
+ * Release the wake lock (allow screen to turn off normally)
+ */
+async function releaseWakeLock() {
+  if (wakeLock !== null) {
+    try {
+      await wakeLock.release();
+      wakeLock = null;
+      console.log('🔓 Screen wake lock released - screen can turn off normally');
+    } catch (err) {
+      console.error('❌ Failed to release wake lock:', err);
+    }
+  }
+  // Also disable iOS fallback
+  disableIOSScreenWakeLock();
+}
+
+/**
+ * iOS Safari fallback: Use a tiny looping video to keep screen awake
+ */
+let iosWakeLockVideo = null;
+function enableIOSScreenWakeLock() {
+  if (!iosWakeLockVideo) {
+    // Create a 1x1 transparent video that loops
+    iosWakeLockVideo = document.createElement('video');
+    iosWakeLockVideo.setAttribute('muted', '');
+    iosWakeLockVideo.setAttribute('playsinline', '');
+    iosWakeLockVideo.setAttribute('loop', '');
+    iosWakeLockVideo.style.position = 'fixed';
+    iosWakeLockVideo.style.opacity = '0';
+    iosWakeLockVideo.style.width = '1px';
+    iosWakeLockVideo.style.height = '1px';
+    iosWakeLockVideo.style.pointerEvents = 'none';
+    
+    // Tiny base64 video (1 frame, transparent)
+    iosWakeLockVideo.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAu1tZGF0AAACrQYF//+p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjYwMSBhMGIxMGMxIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAD2WIhAAR//73n74i1R7AYWvoAAADAAADAAADAAADAAADAAAGKjAAH//73n74i1R7AYWvoAAAAwAAAwAAAwAAAwAAAwAABiowAB//+95++ItUewGFr6AAAAMAAAMAAAMAAAMAAAMAAAYqMAA==';
+    
+    document.body.appendChild(iosWakeLockVideo);
+  }
+  
+  // Start playing the video
+  iosWakeLockVideo.play().catch(err => {
+    console.log('iOS wake lock video failed to play:', err);
+  });
+  
+  console.log('✅ iOS Screen wake lock fallback activated');
+}
+
+function disableIOSScreenWakeLock() {
+  if (iosWakeLockVideo) {
+    iosWakeLockVideo.pause();
+    iosWakeLockVideo.currentTime = 0;
+  }
+}
 
 /* -------------------- Viewport Metrics (iOS Safari toolbars) -------------------- */
 const VIEWPORT_VAR_ROOT = document.documentElement;
@@ -1385,6 +1469,9 @@ function exitWorkout() {
   savedTimeLeft = null;
   currentStep = 0;
 
+  // Release wake lock - allow screen to turn off
+  releaseWakeLock();
+
   const settingsPopup = document.getElementById("settings-popup");
   if (settingsPopup) settingsPopup.style.display = "none";
 
@@ -1447,6 +1534,9 @@ function startWorkout() {
   document.body.style.position = "fixed";
   document.body.style.width = "100%";
   document.body.style.height = "100%";
+
+  // Keep screen on during workout
+  requestWakeLock();
 
   let startIndex = 0;
   const phaseSelect = document.getElementById("start-phase-select");
@@ -1776,7 +1866,7 @@ function login() {
     return;
   }
 
-  fetch(`https://script.google.com/macros/s/AKfycbxvwIIh6L2tSMbvjvpNBFE2WfE96LNy7MX1AjuhK0KKOPu5FWH6LiWHpybJhdHgXJTR/exec?username=${username}&password=${password}`)
+  fetch(`https://script.google.com/macros/s/AKfycbzJ6uS35QkkBdft6dnh3xDbb_MAesyzrN_Otlc2mHyHykv2IGXPZvxZGOYOgv8q8AQt/exec?username=${username}&password=${password}`)
     .then(res => res.json())
     .then(data => {
       if (data.status === "success") {
@@ -1825,7 +1915,7 @@ function logout() {
 }
 
 function loadUserData(username) {
-  fetch("https://script.google.com/macros/s/AKfycbxvwIIh6L2tSMbvjvpNBFE2WfE96LNy7MX1AjuhK0KKOPu5FWH6LiWHpybJhdHgXJTR/exec")
+  fetch("https://script.google.com/macros/s/AKfycbzJ6uS35QkkBdft6dnh3xDbb_MAesyzrN_Otlc2mHyHykv2IGXPZvxZGOYOgv8q8AQt/exec")
     .then(res => res.json())
     .then(data => {
       workouts = data.workouts;
@@ -2547,4 +2637,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver(() => updateSheetInset());
     observer.observe(bottomSheet, { attributes: true, attributeFilter: ['class'] });
   }
+});
+
+// Release wake lock when page is hidden or closed
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    releaseWakeLock();
+  }
+});
+
+// Release wake lock on page unload (backup)
+window.addEventListener('beforeunload', () => {
+  releaseWakeLock();
 });
