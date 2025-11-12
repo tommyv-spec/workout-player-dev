@@ -142,6 +142,9 @@
       border-radius: 10px !important;
       overflow: hidden !important;
       transition: all 0.3s ease !important;
+      /* iOS fixes for password input */
+      position: relative !important;
+      isolation: isolate !important;
     }
 
     .password-input-wrapper:focus-within {
@@ -158,18 +161,26 @@
       border: none !important;
       border-radius: 0 !important;
       color: #FFFFFF !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
       letter-spacing: 0.3px !important;
       font-weight: 400 !important;
       box-sizing: border-box !important;
       outline: none !important;
-      /* iOS Safari fixes */
+      /* Minimal iOS Safari fixes - let browser handle password naturally */
       -webkit-appearance: none !important;
       appearance: none !important;
-      -webkit-tap-highlight-color: transparent !important;
-      -webkit-user-select: text !important;
-      user-select: text !important;
+      width: 100% !important;
+    }
+    
+    /* Password type - let iOS handle it naturally, just ensure font */
+    .password-input-wrapper input[type="password"] {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+    }
+    
+    /* Text type when revealed */
+    .password-input-wrapper input[type="text"] {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
     }
     
     /* Ensure font applies to autofill state */
@@ -179,7 +190,7 @@
     .password-input-wrapper input:-webkit-autofill:active {
       -webkit-text-fill-color: #FFFFFF !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
       -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
       box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
@@ -189,7 +200,7 @@
     /* Ensure font on password reveal */
     .password-input-wrapper input[type="text"] {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
     }
 
@@ -197,7 +208,7 @@
       color: #B0B0B0 !important;
       opacity: 0.8 !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
       font-weight: 400 !important;
     }
@@ -207,7 +218,7 @@
       color: #B0B0B0 !important;
       opacity: 0.8 !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
     }
     
@@ -216,7 +227,7 @@
       color: #B0B0B0 !important;
       opacity: 0.8 !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
     }
     
@@ -225,7 +236,7 @@
       color: #B0B0B0 !important;
       opacity: 0.8 !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
     }
 
@@ -451,7 +462,7 @@
       border: 1px solid #7D7D7D;
       border-radius: 10px;
       color: #FFFFFF;
-      font-size: 15px;
+      font-size: 16px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       letter-spacing: 0.3px;
       transition: all 0.3s ease;
@@ -484,7 +495,7 @@
     .auth-modal input:not(.password-input-wrapper input):-webkit-autofill:active {
       -webkit-text-fill-color: #FFFFFF !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 15px !important;
+      font-size: 16px !important;
       letter-spacing: 0.3px !important;
       -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
       box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
