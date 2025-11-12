@@ -2037,13 +2037,55 @@ function updateWorkoutPreview() {
   }
 
   if (instructionsSection) instructionsSection.style.display = "block";
-  const defaultInstructionsImage = "https://lh3.googleusercontent.com/d/16uLdZNld58oCEUdmL96xzeFP43ZtNbSF";
+  
+  // Default image if instructions are empty
+  const defaultInstructionsImage = "https://drive.google.com/thumbnail?id=1z6cFnovuxN6SL5DWYaa8RdE3TA4dd0R6&sz=w1000";
 
+  // Helper function to detect if string is a URL
+  function isImageUrl(str) {
+    if (!str) return false;
+    const trimmed = str.trim();
+    // Check if it starts with http:// or https://
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+  }
+
+  // Helper function to convert Google Drive sharing links to direct image links
+  function convertGoogleDriveUrl(url) {
+    // Handle Google Drive sharing URLs: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch && driveMatch[1]) {
+      return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1000`;
+    }
+    // If already a direct link or different format, return as-is
+    return url;
+  }
+
+  // Process instructions: can be text, image URL, or empty
   if (workout.instructions && workout.instructions.trim()) {
-    if (instructionsText) { instructionsText.textContent = workout.instructions; instructionsText.style.display = "block"; }
-    if (instructionsImage) instructionsImage.style.display = "none";
+    const instructions = workout.instructions.trim();
+    
+    if (isImageUrl(instructions)) {
+      // It's an image URL - display as image
+      const imageUrl = convertGoogleDriveUrl(instructions);
+      if (instructionsImage) {
+        instructionsImage.src = imageUrl;
+        instructionsImage.style.display = "block";
+      }
+      if (instructionsText) instructionsText.style.display = "none";
+    } else {
+      // It's text - display as text
+      if (instructionsText) {
+        instructionsText.textContent = instructions;
+        instructionsText.style.display = "block";
+      }
+      if (instructionsImage) instructionsImage.style.display = "none";
+    }
   } else {
-    if (instructionsImage) { instructionsImage.src = defaultInstructionsImage; instructionsImage.style.display = "block"; }
+    // Empty - use default image
+    if (instructionsImage) {
+      instructionsImage.src = defaultInstructionsImage;
+      instructionsImage.style.display = "block";
+    }
     if (instructionsText) instructionsText.style.display = "none";
   }
 

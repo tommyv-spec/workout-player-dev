@@ -912,7 +912,14 @@ body:has(#exercise-container[style*="display: flex"]) #start-button-bottom {
 
 #instructions-text {
   margin: 0;
-  color: #4D4D4D;
+  padding: 8px 12px;
+  color: #000000;
+  font-size: clamp(14px, 2.8vw, 16px);
+  line-height: 1.8;
+  letter-spacing: 0.3px;
+  word-spacing: 0.5px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 #instructions-image {
@@ -2129,7 +2136,7 @@ main { max-width: min(600px, 95vw); margin: 0 auto; padding-inline: 20px; paddin
 .instructions-content { max-height: min(500px,calc(var(--dvh-px) * 0.60)); overflow: hidden; transition: max-height .3s ease-out; }
 .instructions-content.collapsed { max-height: 0; }
 #instructions-box { background:#FFFFFF;  font-size: clamp(13px,2.5vw,15px); color:#000000; text-align:left; line-height:1.6; }
-#instructions-text { margin:0; color:#000000; }
+#instructions-text { margin:0; padding: 8px 12px; color:#000000; font-size: clamp(14px,2.8vw,16px); line-height:1.8; letter-spacing:0.3px; word-spacing:0.5px; white-space:pre-wrap; word-wrap:break-word; }
 #instructions-image { width:100%; height:auto; border-radius:8px; margin-top:10px; }
 
 #materiale-section { width:100%; max-width:min(600px,95vw); margin:20px auto; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: clamp(10px,2vw,12px); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,.25); }
@@ -3758,4 +3765,55 @@ html.no-scroll, body.no-scroll{
 /* Qualsiasi sezione che arriva fino in fondo deve rispettare i safe-area */
 .page-safe [data-reach-bottom="true"] {
   padding-block-end: max(16px, var(--safe-bottom));
+}
+
+/* ====== AUTH MODAL STYLES (LOGIN/SIGNUP) ====== */
+.auth-modal input {
+  font-family: 'Roboto Mono', monospace !important;
+}
+
+/* Password input wrapper per il toggle show/hide */
+.auth-modal .password-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  margin-bottom: 12px !important;
+  display: block !important;
+}
+
+.auth-modal .password-wrapper input {
+  width: 100% !important;
+  padding-right: 45px !important;
+  margin-bottom: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+.auth-modal .password-toggle {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 5px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  color: #B0B0B0 !important;
+  width: 30px !important;
+  height: 30px !important;
+  z-index: 10 !important;
+}
+
+.auth-modal .password-toggle:hover {
+  color: #FFFFFF !important;
+  transform: translateY(-50%) scale(1.1) !important;
+}
+
+.auth-modal .password-toggle svg {
+  width: 20px !important;
+  height: 20px !important;
+  pointer-events: none !important;
 }
