@@ -1280,7 +1280,7 @@
       openAuthModal();
     });
 
-    // PASSWORD TOGGLE FUNCTIONALITY (Cross-platform compatible)
+    // PASSWORD TOGGLE FUNCTIONALITY (iOS Safari compatible)
     let toggleTimeout = null;
     
     document.addEventListener('click', function(e) {
@@ -1301,23 +1301,53 @@
           if (passwordInput) {
             // Get current state
             const isPassword = passwordInput.type === 'password';
+            const currentValue = passwordInput.value;
             
-            // Toggle input type
-            passwordInput.type = isPassword ? 'text' : 'password';
-            
-            // Update button state
             if (isPassword) {
+              // Show password - simple type change works
+              passwordInput.type = 'text';
               toggleBtn.classList.add('showing');
               toggleBtn.setAttribute('aria-label', 'Nascondi Password');
             } else {
+              // Hide password - iOS needs input recreation
+              // Save all important attributes
+              const savedValue = passwordInput.value;
+              const savedPlaceholder = passwordInput.placeholder;
+              const savedId = passwordInput.id;
+              const savedAutocomplete = passwordInput.getAttribute('autocomplete');
+              
+              // Create new input element
+              const newInput = document.createElement('input');
+              newInput.type = 'password';
+              newInput.value = savedValue;
+              newInput.placeholder = savedPlaceholder;
+              newInput.id = savedId;
+              newInput.autocomplete = savedAutocomplete;
+              
+              // Copy all classes and attributes
+              newInput.className = passwordInput.className;
+              
+              // Replace old input with new one
+              passwordInput.parentNode.replaceChild(newInput, passwordInput);
+              
+              // Update button state
               toggleBtn.classList.remove('showing');
               toggleBtn.setAttribute('aria-label', 'Mostra Password');
+              
+              // Focus the new input
+              setTimeout(() => {
+                newInput.focus();
+                // Move cursor to end
+                newInput.setSelectionRange(savedValue.length, savedValue.length);
+              }, 10);
             }
             
-            // Keep focus on input for better UX
-            setTimeout(() => {
-              passwordInput.focus();
-            }, 10);
+            // Keep focus for non-recreation case
+            if (isPassword) {
+              setTimeout(() => {
+                passwordInput.focus();
+              }, 10);
+            }
           }
           
           toggleTimeout = null;
