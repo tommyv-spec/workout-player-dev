@@ -1434,10 +1434,11 @@ body:has(#exercise-container[style*="display: flex"]) {
 }
 
 .nav-btn {
-  font-size: clamp(14px, 3.5vw, 17px);
+  font-size: clamp(16px, 4vw, 20px);
   padding: clamp(6px, calc(var(--dvh-px) * 0.015), 9px) clamp(8px, 2vw, 12px);
   background-color: rgba(176, 176, 176, 0.1);
   border: 1px solid rgba(176, 176, 176, 0.3);
+  line-height: 1;
 }
 
 .nav-btn:hover {
