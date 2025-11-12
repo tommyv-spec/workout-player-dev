@@ -1200,19 +1200,31 @@ async function speakCloud(text, lang = "it-IT") {
     await ensureAudioUnlocked();
     // Optional explicit voice mapping
     const voice = lang === "it-IT" ? "it-IT-Wavenet-C" : "en-US-Wavenet-D";
+    
+    console.log(`🗣️ Attempting Google Cloud TTS: "${text}" (${lang})`);
+    
     const res = await fetch("https://google-tts-server.onrender.com/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, lang, voice }),
     });
-    if (!res.ok) throw new Error("Errore TTS");
+    
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No error details");
+      throw new Error(`TTS Server Error ${res.status}: ${errorText}`);
+    }
+    
     const blob = await res.blob();
-    if (blob.size === 0) throw new Error("Audio vuoto");
+    if (blob.size === 0) throw new Error("Audio vuoto - server returned empty audio");
 
     const audioUrl = URL.createObjectURL(blob);
     await playAudioUrl(audioUrl);
+    
+    console.log(`✅ Google Cloud TTS success`);
   } catch (err) {
-    console.warn("❌ Cloud TTS failed:", err);
+    console.error("❌ Cloud TTS failed:", err.message || err);
+    console.error("Full error:", err);
+    throw err; // Re-throw so speak() can handle fallback
   }
 }
 
@@ -1278,12 +1290,27 @@ async function speakSynth(text, lang = "it-IT") {
   return webSpeechSpeak(text, lang);
 }
 
-/* Router: NO implicit fallback (strict per mode) */
+/* Router: With automatic fallback from voice to synth */
 async function speak(text, lang = "it-IT") {
   const mode = document.getElementById("soundMode")?.value
             || document.getElementById("soundMode-setup")?.value
             || "none";
-  if (mode === "voice") return speakCloud(text, lang);
+  
+  if (mode === "voice") {
+    try {
+      return await speakCloud(text, lang);
+    } catch (err) {
+      console.warn("⚠️ Voice mode failed, falling back to synth...");
+      console.error("Voice error details:", err);
+      // Automatic fallback to synth
+      try {
+        return await speakSynth(text, lang);
+      } catch (synthErr) {
+        console.error("❌ Synth fallback also failed:", synthErr);
+      }
+    }
+  }
+  
   if (mode === "synth") return speakSynth(text, lang);
   // other modes: no-op
 }
@@ -1677,23 +1704,20 @@ async function playExercise(index, exercises, resumeTime = null) {
   updateProgressBar();
 
   const mode = document.getElementById("soundMode").value;
-  const useVoiceCloud = mode === "voice";
-  const useVoiceSynth = mode === "synth";
 
   // start the countdown immediately
   startExerciseTimer(duration, exercise, nextExercise);
 
   // say the exercise name without blocking the timer
-  const sayName = useVoiceCloud
-    ? () => speakCloud(exercise.name, detectLang(exercise.name))
-    : useVoiceSynth
-      ? () => speakSynth(exercise.name, detectLang(exercise.name))
-      : null;
-
-  if (sayName) {
-    // guard so a stuck engine on Android can't freeze future calls
+  // Use speak() which has automatic fallback
+  if (mode !== "none" && mode !== "bip") {
     const guard = new Promise(res => setTimeout(res, 2500));
-    Promise.race([sayName(), guard]).catch(() => {});
+    Promise.race([
+      speak(exercise.name, detectLang(exercise.name)),
+      guard
+    ]).catch(err => {
+      console.warn("⚠️ Failed to announce exercise name:", err);
+    });
   }
 
 }
@@ -1756,23 +1780,23 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
 
     // read mode (kept separate)
     const mode = document.getElementById("soundMode").value;
-    const useVoiceCloud = mode === "voice";
-    const useVoiceSynth = mode === "synth";
-    const useBip       = mode === "bip";
+    const useBip = mode === "bip";
 
     // milestones & UI cues — run once per displayed second
     if (remaining !== lastSecond) {
       lastSecond = remaining;
 
       once(60, () => {
-        if (useVoiceCloud) speakCloud("mancano sessanta secondi", "it-IT");
-        if (useVoiceSynth) speakSynth("mancano sessanta secondi", "it-IT");
+        if (mode === "voice" || mode === "synth") {
+          speak("mancano sessanta secondi", "it-IT").catch(() => {});
+        }
         if (mode === "beppe") playBeppeAudio(beppeSounds.s60);
       });
 
       once(30, () => {
-        if (useVoiceCloud) speakCloud("mancano trenta secondi", "it-IT");
-        if (useVoiceSynth) speakSynth("mancano trenta secondi", "it-IT");
+        if (mode === "voice" || mode === "synth") {
+          speak("mancano trenta secondi", "it-IT").catch(() => {});
+        }
         if (mode === "beppe") playBeppeAudio(beppeSounds.s30);
       });
 
@@ -1809,12 +1833,14 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
             const urls = [beppeSounds.prossimo];
             if (nextExercise.audio) urls.push(nextExercise.audio);
             playBeppeAudioSequence(urls);
-          } else if (useVoiceCloud) {
-            await speakCloud("prossimo esercizio:", "it-IT");
-            await speakCloud(nextExercise.name, "it-IT");
-          } else if (useVoiceSynth) {
-            await speakSynth("prossimo esercizio:", "it-IT");
-            await speakSynth(nextExercise.name, "it-IT");
+          } else if (mode === "voice" || mode === "synth") {
+            // Use speak() with automatic fallback
+            try {
+              await speak("prossimo esercizio:", "it-IT");
+              await speak(nextExercise.name, detectLang(nextExercise.name));
+            } catch (err) {
+              console.warn("⚠️ Failed to announce next exercise:", err);
+            }
           }
         }
 
@@ -1835,8 +1861,9 @@ async function startExerciseTimer(initialSeconds, exercise, nextExercise) {
 
       // 5s countdown — runs once (no more stutter)
       once(5, () => {
-        if (useVoiceCloud) speakCloud("cinque, quattro, tre, due, uno", "it-IT");
-        if (useVoiceSynth) speakSynth("cinque, quattro, tre, due, uno", "it-IT");
+        if (mode === "voice" || mode === "synth") {
+          speak("cinque, quattro, tre, due, uno", "it-IT").catch(() => {});
+        }
         if (mode === "beppe") playBeppeAudio(beppeSounds.countdown5);
       });
     }
