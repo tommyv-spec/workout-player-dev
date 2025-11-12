@@ -136,6 +136,9 @@
       width: 100% !important;
       display: block !important;
       margin-bottom: 12px !important;
+      /* iOS Safari touch fix */
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
 
     .password-input-wrapper input {
@@ -143,14 +146,19 @@
       padding-right: 50px !important; /* Space for icon inside */
       margin-bottom: 0 !important;
       box-sizing: border-box !important;
+      /* iOS Safari fixes */
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      position: relative !important;
+      z-index: 1 !important; /* Ensure input is below button but can still receive touch */
+      touch-action: manipulation !important;
     }
 
     /* Override button styling specifically for password toggle */
     .auth-modal .password-toggle-btn {
       position: absolute !important;
       right: 8px !important; /* Position inside the input field */
-      top: 50% !important;
-      transform: translateY(-50%) !important;
+      top: 8px !important; /* Fixed position instead of transform */
       background: transparent !important;
       border: none !important;
       cursor: pointer !important;
@@ -159,6 +167,8 @@
       align-items: center !important;
       justify-content: center !important;
       color: #B0B0B0 !important;
+      z-index: 10 !important; /* Ensure button is clickable but doesn't block input */
+      pointer-events: auto !important; /* Explicitly allow pointer events on button */
       transition: color 0.2s ease !important;
       z-index: 10 !important;
       width: 32px !important;
@@ -335,6 +345,14 @@
       font-family: 'Staatliches', sans-serif;
       letter-spacing: 0.5px;
       transition: all 0.3s ease;
+      /* iOS Safari fixes */
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: text;
+      user-select: text;
+      position: relative;
+      z-index: 1;
     }
 
     .auth-modal input::placeholder {
