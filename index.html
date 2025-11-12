@@ -176,14 +176,23 @@
       user-select: text !important;
     }
     
-    /* Password type - let iOS handle it naturally, just ensure font */
+    /* Password type - CRITICAL: Ensure dots are visible on iOS */
     .password-input-wrapper input[type="password"] {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      color: #FFFFFF !important;
+      -webkit-text-fill-color: #FFFFFF !important;
+      opacity: 1 !important;
+      font-size: 16px !important;
     }
     
-    /* Text type when revealed */
+    /* Text type when revealed - Ensure visible */
     .password-input-wrapper input[type="text"] {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 16px !important;
+      letter-spacing: 0.3px !important;
+      color: #FFFFFF !important;
+      -webkit-text-fill-color: #FFFFFF !important;
+      opacity: 1 !important;
     }
     
     /* Ensure font applies to autofill state */
@@ -198,13 +207,6 @@
       -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
       box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
       transition: background-color 5000s ease-in-out 0s !important;
-    }
-    
-    /* Ensure font on password reveal */
-    .password-input-wrapper input[type="text"] {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-      font-size: 16px !important;
-      letter-spacing: 0.3px !important;
     }
 
     .password-input-wrapper input::placeholder {
