@@ -2241,10 +2241,7 @@ function updateWorkoutPreview() {
         const durationDiv = document.createElement("div");
         durationDiv.className = "exercise-info-item";
         const timeValue = ex.reps || (ex.duration ? `${ex.duration}s` : '');
-        durationDiv.innerHTML = `
-          <span class="info-icon">⏱️</span>
-          <span class="info-value">${timeValue}</span>
-        `;
+        durationDiv.textContent = timeValue;
         details.appendChild(durationDiv);
       }
 
@@ -2252,10 +2249,7 @@ function updateWorkoutPreview() {
       if (ex.tipoDiPeso) {
         const equipmentDiv = document.createElement("div");
         equipmentDiv.className = "exercise-info-item";
-        equipmentDiv.innerHTML = `
-          <span class="info-icon">🏋️</span>
-          <span class="info-value">${ex.tipoDiPeso}</span>
-        `;
+        equipmentDiv.textContent = ex.tipoDiPeso;
         details.appendChild(equipmentDiv);
       }
 
