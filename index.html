@@ -150,8 +150,12 @@
       -webkit-appearance: none !important;
       appearance: none !important;
       position: relative !important;
-      z-index: 1 !important; /* Ensure input is below button but can still receive touch */
+      z-index: 1 !important;
+      /* Critical iOS touch fixes */
       touch-action: manipulation !important;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1) !important;
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
 
     /* Override button styling specifically for password toggle */
@@ -167,10 +171,10 @@
       align-items: center !important;
       justify-content: center !important;
       color: #B0B0B0 !important;
-      z-index: 10 !important; /* Ensure button is clickable but doesn't block input */
-      pointer-events: auto !important; /* Explicitly allow pointer events on button */
-      transition: color 0.2s ease !important;
       z-index: 10 !important;
+      /* CRITICAL iOS FIX: Let touches pass through button to input */
+      pointer-events: none !important;
+      transition: color 0.2s ease !important;
       width: 32px !important;
       height: 32px !important;
       outline: none !important;
@@ -178,7 +182,12 @@
       box-shadow: none !important;
       font-size: 0 !important;
       letter-spacing: 0 !important;
+    }
+    
+    /* Enable pointer events only on the SVG icons themselves */
+    .auth-modal .password-toggle-btn svg {
       pointer-events: auto !important;
+      cursor: pointer !important;
     }
 
     .auth-modal .password-toggle-btn:hover {
@@ -493,7 +502,7 @@
         <h3>Login</h3>
         <input type="email" placeholder="Email" id="login-email" autocomplete="email">
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Password" id="login-password" autocomplete="current-password">
+          <input type="password" placeholder="Password" id="login-password" autocomplete="current-password" inputmode="text">
           <button type="button" class="password-toggle-btn" data-target="login-password" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -531,7 +540,7 @@
       <div class="auth-view" id="reset-password-view">
         <h3>Nuova Password</h3>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Nuova Password (min 6 caratteri)" id="reset-password" autocomplete="new-password" minlength="6">
+          <input type="password" placeholder="Nuova Password (min 6 caratteri)" id="reset-password" autocomplete="new-password" minlength="6" inputmode="text">
           <button type="button" class="password-toggle-btn" data-target="reset-password" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -544,7 +553,7 @@
           </button>
         </div>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Conferma Nuova Password" id="reset-password-confirm" autocomplete="new-password" minlength="6">
+          <input type="password" placeholder="Conferma Nuova Password" id="reset-password-confirm" autocomplete="new-password" minlength="6" inputmode="text">
           <button type="button" class="password-toggle-btn" data-target="reset-password-confirm" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -567,7 +576,7 @@
         <input type="text" placeholder="Username" id="signup-username" autocomplete="username">
         <input type="email" placeholder="Email" id="signup-email" autocomplete="email">
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Password (min 6 caratteri)" id="signup-password" autocomplete="new-password" minlength="6">
+          <input type="password" placeholder="Password (min 6 caratteri)" id="signup-password" autocomplete="new-password" minlength="6" inputmode="text">
           <button type="button" class="password-toggle-btn" data-target="signup-password" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -580,7 +589,7 @@
           </button>
         </div>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Conferma Password" id="signup-password-confirm" autocomplete="new-password" minlength="6">
+          <input type="password" placeholder="Conferma Password" id="signup-password-confirm" autocomplete="new-password" minlength="6" inputmode="text">
           <button type="button" class="password-toggle-btn" data-target="signup-password-confirm" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -1141,8 +1150,10 @@
 
     // CUSTOM PASSWORD TOGGLE FUNCTIONALITY
     document.addEventListener('click', function(e) {
-      if (e.target.closest('.password-toggle-btn')) {
-        const toggleBtn = e.target.closest('.password-toggle-btn');
+      // Check if click is on SVG icon (which has pointer-events: auto)
+      const svg = e.target.closest('.password-toggle-btn svg');
+      if (svg) {
+        const toggleBtn = svg.closest('.password-toggle-btn');
         const targetId = toggleBtn.getAttribute('data-target');
         const passwordInput = document.getElementById(targetId);
         
