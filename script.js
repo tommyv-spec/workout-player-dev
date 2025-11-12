@@ -2685,6 +2685,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ===== FAB MENU TOGGLE =====
+  const fabBtn = document.getElementById("fab-menu-toggle");
+  const controlsContainer = document.getElementById("controls-container");
+  const controlsOverlay = document.getElementById("controls-overlay");
+
+  if (fabBtn && controlsContainer && controlsOverlay) {
+    // Toggle menu on FAB click
+    fabBtn.addEventListener("click", () => {
+      const isHidden = controlsContainer.classList.contains("controls-hidden");
+      
+      if (isHidden) {
+        // Open menu
+        controlsContainer.classList.remove("controls-hidden");
+        controlsContainer.classList.add("controls-visible");
+        controlsOverlay.classList.remove("controls-overlay-hidden");
+        controlsOverlay.classList.add("controls-overlay-visible");
+        fabBtn.classList.add("active");
+      } else {
+        // Close menu
+        controlsContainer.classList.remove("controls-visible");
+        controlsContainer.classList.add("controls-hidden");
+        controlsOverlay.classList.remove("controls-overlay-visible");
+        controlsOverlay.classList.add("controls-overlay-hidden");
+        fabBtn.classList.remove("active");
+      }
+    });
+
+    // Close menu on overlay click
+    controlsOverlay.addEventListener("click", () => {
+      controlsContainer.classList.remove("controls-visible");
+      controlsContainer.classList.add("controls-hidden");
+      controlsOverlay.classList.remove("controls-overlay-visible");
+      controlsOverlay.classList.add("controls-overlay-hidden");
+      fabBtn.classList.remove("active");
+    });
+  }
+
   // ===== SETUP SETTINGS POPUP (BEFORE WORKOUT) =====
   const setupSettingsBtn = document.getElementById("setup-settings-button");
   if (setupSettingsBtn) {
