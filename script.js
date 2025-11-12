@@ -2236,17 +2236,27 @@ function updateWorkoutPreview() {
       const details = document.createElement("div");
       details.className = "exercise-details";
 
-      if (ex.tipoDiPeso) {
-        const equipment = document.createElement("div");
-        equipment.className = "exercise-equipment";
-        equipment.innerHTML = `${ex.tipoDiPeso}`;
-        details.appendChild(equipment);
+      // DURATION (if exists)
+      if (ex.duration || ex.reps) {
+        const durationDiv = document.createElement("div");
+        durationDiv.className = "exercise-info-item";
+        const timeValue = ex.reps || (ex.duration ? `${ex.duration}s` : '');
+        durationDiv.innerHTML = `
+          <span class="info-icon">⏱️</span>
+          <span class="info-value">${timeValue}</span>
+        `;
+        details.appendChild(durationDiv);
       }
-      if (ex.reps) {
-        const reps = document.createElement("div");
-        reps.className = "exercise-reps";
-        reps.innerHTML = `<strong>Reps:</strong> ${ex.reps}`;
-        details.appendChild(reps);
+
+      // WEIGHT/EQUIPMENT (if exists)
+      if (ex.tipoDiPeso) {
+        const equipmentDiv = document.createElement("div");
+        equipmentDiv.className = "exercise-info-item";
+        equipmentDiv.innerHTML = `
+          <span class="info-icon">🏋️</span>
+          <span class="info-value">${ex.tipoDiPeso}</span>
+        `;
+        details.appendChild(equipmentDiv);
       }
 
       card.appendChild(img);
