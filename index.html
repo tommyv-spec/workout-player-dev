@@ -117,12 +117,14 @@
       display: none !important;
     }
 
+    /* Safe: don't kill the decoration container on iOS */
     input[type="password"]::-webkit-credentials-auto-fill-button,
-    input[type="password"]::-webkit-textfield-decoration-container,
     input[type="email"]::-webkit-credentials-auto-fill-button {
-      visibility: hidden !important;
-      display: none !important;
-      pointer-events: none !important;
+      opacity: 0 !important;             /* visually gone */
+      pointer-events: none !important;   /* not clickable */
+      width: 0 !important;               /* collapse hit area */
+      height: 0 !important;
+      overflow: hidden !important;
     }
 
     input[type="password"],
@@ -1316,45 +1318,18 @@
                 passwordInput.setSelectionRange(currentValue.length, currentValue.length);
               }, 10);
             } else {
-              // Hide password - iOS needs complete input recreation
-              // Save ALL attributes from original input
-              const savedValue = passwordInput.value;
-              const savedPlaceholder = passwordInput.placeholder;
-              const savedId = passwordInput.id;
-              const savedAutocomplete = passwordInput.getAttribute('autocomplete');
-              const savedMinlength = passwordInput.getAttribute('minlength');
-              const savedClass = passwordInput.className;
-              
-              // Create completely new input element
-              const newInput = document.createElement('input');
-              newInput.type = 'password';
-              newInput.value = savedValue;
-              newInput.placeholder = savedPlaceholder;
-              newInput.id = savedId;
-              newInput.className = savedClass;
-              
-              // Set ALL attributes properly for iOS compatibility
-              if (savedAutocomplete) {
-                newInput.setAttribute('autocomplete', savedAutocomplete);
-              }
-              if (savedMinlength) {
-                newInput.setAttribute('minlength', savedMinlength);
-              }
-              
-              // Replace old input with fresh new one
-              passwordInput.parentNode.replaceChild(newInput, passwordInput);
-              
-              // Update button state
-              toggleBtn.classList.remove('showing');
-              toggleBtn.setAttribute('aria-label', 'Mostra Password');
-              
-              // Focus the NEW input (not the old removed one!)
+              // Hide password – safe path on iOS: blur → switch type → focus
+              const currentValue = passwordInput.value;
+              passwordInput.blur();
+              // Small delay helps iOS detach secure buffer cleanly
               setTimeout(() => {
-                newInput.focus();
-                // Move cursor to end
-                if (savedValue.length > 0) {
-                  newInput.setSelectionRange(savedValue.length, savedValue.length);
-                }
+                passwordInput.setAttribute('type', 'password');
+                toggleBtn.classList.remove('showing');
+                toggleBtn.setAttribute('aria-label', 'Mostra Password');
+                // Restore focus and caret
+                passwordInput.focus();
+                const end = currentValue.length;
+                if (end > 0) passwordInput.setSelectionRange(end, end);
               }, 10);
             }
           }
