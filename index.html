@@ -634,7 +634,7 @@
         <h3>Login</h3>
         <input type="email" placeholder="Email" id="login-email" autocomplete="email">
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Password" id="login-password" autocomplete="current-password" inputmode="text">
+          <input type="password" placeholder="Password" id="login-password" autocomplete="current-password">
           <button type="button" class="password-toggle-btn" data-target="login-password" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -672,7 +672,7 @@
       <div class="auth-view" id="reset-password-view">
         <h3>Nuova Password</h3>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Nuova Password (min 6 caratteri)" id="reset-password" autocomplete="new-password" minlength="6" inputmode="text">
+          <input type="password" placeholder="Nuova Password (min 6 caratteri)" id="reset-password" autocomplete="new-password" minlength="6">
           <button type="button" class="password-toggle-btn" data-target="reset-password" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -685,7 +685,7 @@
           </button>
         </div>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Conferma Nuova Password" id="reset-password-confirm" autocomplete="new-password" minlength="6" inputmode="text">
+          <input type="password" placeholder="Conferma Nuova Password" id="reset-password-confirm" autocomplete="new-password" minlength="6">
           <button type="button" class="password-toggle-btn" data-target="reset-password-confirm" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -708,7 +708,7 @@
         <input type="text" placeholder="Username" id="signup-username" autocomplete="username">
         <input type="email" placeholder="Email" id="signup-email" autocomplete="email">
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Password (min 6 caratteri)" id="signup-password" autocomplete="new-password" minlength="6" inputmode="text">
+          <input type="password" placeholder="Password (min 6 caratteri)" id="signup-password" autocomplete="new-password" minlength="6">
           <button type="button" class="password-toggle-btn" data-target="signup-password" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -721,7 +721,7 @@
           </button>
         </div>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="Conferma Password" id="signup-password-confirm" autocomplete="new-password" minlength="6" inputmode="text">
+          <input type="password" placeholder="Conferma Password" id="signup-password-confirm" autocomplete="new-password" minlength="6">
           <button type="button" class="password-toggle-btn" data-target="signup-password-confirm" aria-label="Mostra/Nascondi Password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -1308,44 +1308,53 @@
               passwordInput.type = 'text';
               toggleBtn.classList.add('showing');
               toggleBtn.setAttribute('aria-label', 'Nascondi Password');
+              
+              // Keep focus
+              setTimeout(() => {
+                passwordInput.focus();
+                // Move cursor to end
+                passwordInput.setSelectionRange(currentValue.length, currentValue.length);
+              }, 10);
             } else {
-              // Hide password - iOS needs input recreation
-              // Save all important attributes
+              // Hide password - iOS needs complete input recreation
+              // Save ALL attributes from original input
               const savedValue = passwordInput.value;
               const savedPlaceholder = passwordInput.placeholder;
               const savedId = passwordInput.id;
               const savedAutocomplete = passwordInput.getAttribute('autocomplete');
+              const savedMinlength = passwordInput.getAttribute('minlength');
+              const savedClass = passwordInput.className;
               
-              // Create new input element
+              // Create completely new input element
               const newInput = document.createElement('input');
               newInput.type = 'password';
               newInput.value = savedValue;
               newInput.placeholder = savedPlaceholder;
               newInput.id = savedId;
-              newInput.autocomplete = savedAutocomplete;
+              newInput.className = savedClass;
               
-              // Copy all classes and attributes
-              newInput.className = passwordInput.className;
+              // Set ALL attributes properly for iOS compatibility
+              if (savedAutocomplete) {
+                newInput.setAttribute('autocomplete', savedAutocomplete);
+              }
+              if (savedMinlength) {
+                newInput.setAttribute('minlength', savedMinlength);
+              }
               
-              // Replace old input with new one
+              // Replace old input with fresh new one
               passwordInput.parentNode.replaceChild(newInput, passwordInput);
               
               // Update button state
               toggleBtn.classList.remove('showing');
               toggleBtn.setAttribute('aria-label', 'Mostra Password');
               
-              // Focus the new input
+              // Focus the NEW input (not the old removed one!)
               setTimeout(() => {
                 newInput.focus();
                 // Move cursor to end
-                newInput.setSelectionRange(savedValue.length, savedValue.length);
-              }, 10);
-            }
-            
-            // Keep focus for non-recreation case
-            if (isPassword) {
-              setTimeout(() => {
-                passwordInput.focus();
+                if (savedValue.length > 0) {
+                  newInput.setSelectionRange(savedValue.length, savedValue.length);
+                }
               }, 10);
             }
           }
