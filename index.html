@@ -130,77 +130,111 @@
       background-image: none !important;
     }
 
-    /* CUSTOM PASSWORD TOGGLE BUTTON */
+    /* REDESIGNED PASSWORD INPUT - BUTTON NEXT TO INPUT (BEST PRACTICE FOR iOS) */
     .password-input-wrapper {
-      position: relative !important;
+      display: flex !important;
+      align-items: stretch !important;
       width: 100% !important;
-      display: block !important;
+      min-height: 48px !important;
       margin-bottom: 12px !important;
-      /* iOS Safari touch fix */
-      -webkit-user-select: text !important;
-      user-select: text !important;
+      background: rgba(0, 0, 0, 0.5) !important;
+      border: 1px solid #7D7D7D !important;
+      border-radius: 10px !important;
+      overflow: hidden !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .password-input-wrapper:focus-within {
+      border-color: #FFFFFF !important;
+      background: rgba(0, 0, 0, 0.7) !important;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
     }
 
     .password-input-wrapper input {
-      width: 100% !important;
-      padding-right: 50px !important; /* Space for icon inside */
+      flex: 1 !important;
+      padding: 12px 14px !important;
       margin-bottom: 0 !important;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
+      color: #FFFFFF !important;
+      font-size: 15px !important;
+      font-family: 'Staatliches', sans-serif !important;
+      letter-spacing: 0.5px !important;
       box-sizing: border-box !important;
+      outline: none !important;
       /* iOS Safari fixes */
       -webkit-appearance: none !important;
       appearance: none !important;
-      position: relative !important;
-      z-index: 1 !important;
-      /* Critical iOS touch fixes */
-      touch-action: manipulation !important;
-      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1) !important;
+      -webkit-tap-highlight-color: transparent !important;
       -webkit-user-select: text !important;
       user-select: text !important;
     }
 
-    /* Override button styling specifically for password toggle */
-    .auth-modal .password-toggle-btn {
-      position: absolute !important;
-      right: 8px !important; /* Position inside the input field */
-      top: 8px !important; /* Fixed position instead of transform */
+    .password-input-wrapper input::placeholder {
+      color: #B0B0B0 !important;
+      opacity: 0.8 !important;
+    }
+
+    .password-input-wrapper input:focus {
       background: transparent !important;
-      border: none !important;
-      cursor: pointer !important;
-      padding: 6px !important;
+      box-shadow: none !important;
+    }
+
+    /* Password toggle button - NEXT TO input, not over it */
+    .auth-modal .password-toggle-btn {
+      /* Layout */
+      flex-shrink: 0 !important;
+      width: 44px !important;
+      min-width: 44px !important;
+      height: auto !important;
+      padding: 0 !important;
+      margin: 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
+      
+      /* Appearance */
+      background: transparent !important;
+      border: none !important;
+      border-left: 1px solid rgba(125, 125, 125, 0.3) !important;
+      border-radius: 0 !important;
       color: #B0B0B0 !important;
-      z-index: 10 !important;
-      /* CRITICAL iOS FIX: Let touches pass through button to input */
-      pointer-events: none !important;
-      transition: color 0.2s ease !important;
-      width: 32px !important;
-      height: 32px !important;
+      
+      /* Interaction */
+      cursor: pointer !important;
       outline: none !important;
-      margin: 0 !important;
-      box-shadow: none !important;
+      
+      /* Transitions */
+      transition: all 0.2s ease !important;
+      
+      /* Mobile/Touch */
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+      touch-action: manipulation !important;
+      
+      /* Typography reset */
       font-size: 0 !important;
+      line-height: 1 !important;
       letter-spacing: 0 !important;
+      text-align: center !important;
+      
+      /* Box model */
+      box-sizing: border-box !important;
+      vertical-align: middle !important;
     }
     
-    /* Enable pointer events only on the SVG icons themselves */
-    .auth-modal .password-toggle-btn svg {
-      pointer-events: auto !important;
-      cursor: pointer !important;
-    }
-
     .auth-modal .password-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
       color: #FFFFFF !important;
-      background: rgba(255, 255, 255, 0.1) !important;
-      border-radius: 4px !important;
-      transform: translateY(-50%) !important;
-      box-shadow: none !important;
     }
-
+    
     .auth-modal .password-toggle-btn:active {
-      transform: translateY(-50%) scale(0.95) !important;
-      background: rgba(255, 255, 255, 0.15) !important;
+      background: rgba(255, 255, 255, 0.1) !important;
     }
 
     .auth-modal .password-toggle-btn:focus {
@@ -208,39 +242,58 @@
       box-shadow: none !important;
     }
 
-    /* Make both SVG icons occupy the same space */
-    .password-toggle-btn svg {
-      width: 20px !important;
-      height: 20px !important;
-      pointer-events: none !important;
-      display: block !important;
-      position: absolute !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      transition: opacity 0.2s ease !important;
+    /* SVG Icon Positioning and Toggle */
+    .auth-modal .password-toggle-btn {
+      position: relative !important;
+    }
+    /* SVG Icon Positioning and Toggle */
+    .auth-modal .password-toggle-btn {
+      position: relative !important;
     }
 
-    /* Control visibility with opacity and visibility for smoother transition */
+    .auth-modal .password-toggle-btn svg {
+      width: 20px !important;
+      height: 20px !important;
+      display: block !important;
+      pointer-events: none !important;
+      transition: opacity 0.15s ease, transform 0.15s ease !important;
+    }
+
+    /* Default state: Show eye (password hidden) */
     .password-toggle-btn .eye-icon {
       opacity: 1 !important;
-      visibility: visible !important;
+      transform: scale(1) !important;
     }
 
     .password-toggle-btn .eye-off-icon {
       opacity: 0 !important;
-      visibility: hidden !important;
+      transform: scale(0.8) !important;
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      margin-top: -10px !important;
+      margin-left: -10px !important;
+      pointer-events: none !important;
     }
 
-    /* When password is visible, swap icons */
+    /* Active state: Show eye-off (password visible) */
     .password-toggle-btn.showing .eye-icon {
       opacity: 0 !important;
-      visibility: hidden !important;
+      transform: scale(0.8) !important;
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      margin-top: -10px !important;
+      margin-left: -10px !important;
+      pointer-events: none !important;
     }
 
     .password-toggle-btn.showing .eye-off-icon {
       opacity: 1 !important;
-      visibility: visible !important;
+      transform: scale(1) !important;
+      position: relative !important;
+      margin-top: 0 !important;
+      margin-left: 0 !important;
     }
 
     /* AUTH MODAL (Login/Signup) */
@@ -342,7 +395,7 @@
       letter-spacing: 2px;
     }
 
-    .auth-modal input {
+    .auth-modal input:not(.password-input-wrapper input) {
       width: 100%;
       padding: 12px 14px;
       margin-bottom: 12px;
@@ -364,12 +417,12 @@
       z-index: 1;
     }
 
-    .auth-modal input::placeholder {
+    .auth-modal input:not(.password-input-wrapper input)::placeholder {
       color: #B0B0B0;
       opacity: 0.8;
     }
 
-    .auth-modal input:focus {
+    .auth-modal input:not(.password-input-wrapper input):focus {
       outline: none;
       border-color: #FFFFFF;
       background: rgba(0, 0, 0, 0.7);
@@ -1148,27 +1201,60 @@
       openAuthModal();
     });
 
-    // CUSTOM PASSWORD TOGGLE FUNCTIONALITY
+    // PASSWORD TOGGLE FUNCTIONALITY (Cross-platform compatible)
+    let toggleTimeout = null;
+    
     document.addEventListener('click', function(e) {
-      // Check if click is on SVG icon (which has pointer-events: auto)
-      const svg = e.target.closest('.password-toggle-btn svg');
-      if (svg) {
-        const toggleBtn = svg.closest('.password-toggle-btn');
-        const targetId = toggleBtn.getAttribute('data-target');
-        const passwordInput = document.getElementById(targetId);
+      const toggleBtn = e.target.closest('.password-toggle-btn');
+      if (toggleBtn) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        if (passwordInput) {
-          // Toggle input type
-          if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            toggleBtn.classList.add('showing');
-          } else {
-            passwordInput.type = 'password';
-            toggleBtn.classList.remove('showing');
-          }
+        // Debounce rapid clicks
+        if (toggleTimeout) {
+          clearTimeout(toggleTimeout);
         }
+        
+        toggleTimeout = setTimeout(() => {
+          const targetId = toggleBtn.getAttribute('data-target');
+          const passwordInput = document.getElementById(targetId);
+          
+          if (passwordInput) {
+            // Get current state
+            const isPassword = passwordInput.type === 'password';
+            
+            // Toggle input type
+            passwordInput.type = isPassword ? 'text' : 'password';
+            
+            // Update button state
+            if (isPassword) {
+              toggleBtn.classList.add('showing');
+              toggleBtn.setAttribute('aria-label', 'Nascondi Password');
+            } else {
+              toggleBtn.classList.remove('showing');
+              toggleBtn.setAttribute('aria-label', 'Mostra Password');
+            }
+            
+            // Keep focus on input for better UX
+            setTimeout(() => {
+              passwordInput.focus();
+            }, 10);
+          }
+          
+          toggleTimeout = null;
+        }, 50); // 50ms debounce
       }
     });
+    
+    // Also handle touch events for mobile devices
+    document.addEventListener('touchend', function(e) {
+      const toggleBtn = e.target.closest('.password-toggle-btn');
+      if (toggleBtn) {
+        // Prevent click event from also firing
+        e.preventDefault();
+        toggleBtn.click();
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>
