@@ -1148,6 +1148,30 @@ async function playAudioUrl(url) {
 
   try { await (window.__audioCtx?.resume?.() || Promise.resolve()); } catch (_) {}
 
+  // ===== AMPLIFICAZIONE VOLUME CON WEB AUDIO API =====
+  // Crea AudioContext se non esiste
+  if (!window.__audioCtx) {
+    window.__audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  
+  // Crea o riusa MediaElementSource e GainNode
+  if (!window.__ttsSource) {
+    window.__ttsSource = window.__audioCtx.createMediaElementSource(el);
+    window.__ttsGainNode = window.__audioCtx.createGain();
+    
+    // IMPOSTA IL VOLUME AMPLIFICATO QUI
+    // 1.0 = volume normale
+    // 2.0 = volume raddoppiato
+    // 3.0 = volume triplicato
+    window.__ttsGainNode.gain.value = 2.5; // ← AUMENTA QUESTO VALORE PER PIÙ VOLUME
+    
+    // Connetti: Audio Element → GainNode → Speakers
+    window.__ttsSource.connect(window.__ttsGainNode);
+    window.__ttsGainNode.connect(window.__audioCtx.destination);
+    
+    console.log("🔊 Audio amplification enabled with gain:", window.__ttsGainNode.gain.value);
+  }
+  
   await new Promise((resolve, reject) => {
     const cleanup = () => {
       el.onended = null;
@@ -1252,7 +1276,7 @@ async function webSpeechSpeak(text, lang) {
   utter.lang   = (voice && voice.lang) || (lang || "it-IT");
   utter.rate   = 1.0;
   utter.pitch  = 1.0;
-  utter.volume = 1.0;
+  utter.volume = 1.0; // Speech Synthesis già al massimo (non può superare 1.0)
 
   // Tiny delay helps some Android builds
   await new Promise(r => setTimeout(r, 60));
