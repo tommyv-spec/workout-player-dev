@@ -159,8 +159,9 @@
       border-radius: 0 !important;
       color: #FFFFFF !important;
       font-size: 15px !important;
-      font-family: 'Staatliches', sans-serif !important;
-      letter-spacing: 0.5px !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      letter-spacing: 0.3px !important;
+      font-weight: 400 !important;
       box-sizing: border-box !important;
       outline: none !important;
       /* iOS Safari fixes */
@@ -170,10 +171,62 @@
       -webkit-user-select: text !important;
       user-select: text !important;
     }
+    
+    /* Ensure font applies to autofill state */
+    .password-input-wrapper input:-webkit-autofill,
+    .password-input-wrapper input:-webkit-autofill:hover,
+    .password-input-wrapper input:-webkit-autofill:focus,
+    .password-input-wrapper input:-webkit-autofill:active {
+      -webkit-text-fill-color: #FFFFFF !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
+      -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
+      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
+      transition: background-color 5000s ease-in-out 0s !important;
+    }
+    
+    /* Ensure font on password reveal */
+    .password-input-wrapper input[type="text"] {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
+    }
 
     .password-input-wrapper input::placeholder {
       color: #B0B0B0 !important;
       opacity: 0.8 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
+      font-weight: 400 !important;
+    }
+    
+    /* Webkit placeholder */
+    .password-input-wrapper input::-webkit-input-placeholder {
+      color: #B0B0B0 !important;
+      opacity: 0.8 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
+    }
+    
+    /* Mozilla placeholder */
+    .password-input-wrapper input::-moz-placeholder {
+      color: #B0B0B0 !important;
+      opacity: 0.8 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
+    }
+    
+    /* MS placeholder */
+    .password-input-wrapper input:-ms-input-placeholder {
+      color: #B0B0B0 !important;
+      opacity: 0.8 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
     }
 
     .password-input-wrapper input:focus {
@@ -256,44 +309,39 @@
       height: 20px !important;
       display: block !important;
       pointer-events: none !important;
-      transition: opacity 0.15s ease, transform 0.15s ease !important;
+      /* CRITICAL: Both icons absolutely positioned in same spot */
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      margin-top: -10px !important;
+      margin-left: -10px !important;
+      transition: opacity 0.2s ease, transform 0.2s ease !important;
     }
 
     /* Default state: Show eye (password hidden) */
     .password-toggle-btn .eye-icon {
       opacity: 1 !important;
-      transform: scale(1) !important;
+      transform: scale(1) rotate(0deg) !important;
+      z-index: 2 !important;
     }
 
     .password-toggle-btn .eye-off-icon {
       opacity: 0 !important;
-      transform: scale(0.8) !important;
-      position: absolute !important;
-      top: 50% !important;
-      left: 50% !important;
-      margin-top: -10px !important;
-      margin-left: -10px !important;
-      pointer-events: none !important;
+      transform: scale(0.8) rotate(5deg) !important;
+      z-index: 1 !important;
     }
 
     /* Active state: Show eye-off (password visible) */
     .password-toggle-btn.showing .eye-icon {
       opacity: 0 !important;
-      transform: scale(0.8) !important;
-      position: absolute !important;
-      top: 50% !important;
-      left: 50% !important;
-      margin-top: -10px !important;
-      margin-left: -10px !important;
-      pointer-events: none !important;
+      transform: scale(0.8) rotate(-5deg) !important;
+      z-index: 1 !important;
     }
 
     .password-toggle-btn.showing .eye-off-icon {
       opacity: 1 !important;
-      transform: scale(1) !important;
-      position: relative !important;
-      margin-top: 0 !important;
-      margin-left: 0 !important;
+      transform: scale(1) rotate(0deg) !important;
+      z-index: 2 !important;
     }
 
     /* AUTH MODAL (Login/Signup) */
@@ -404,8 +452,8 @@
       border-radius: 10px;
       color: #FFFFFF;
       font-size: 15px;
-      font-family: 'Staatliches', sans-serif;
-      letter-spacing: 0.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      letter-spacing: 0.3px;
       transition: all 0.3s ease;
       /* iOS Safari fixes */
       -webkit-appearance: none;
@@ -427,6 +475,21 @@
       border-color: #FFFFFF;
       background: rgba(0, 0, 0, 0.7);
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Ensure font applies to autofill state for email/other inputs */
+    .auth-modal input:not(.password-input-wrapper input):-webkit-autofill,
+    .auth-modal input:not(.password-input-wrapper input):-webkit-autofill:hover,
+    .auth-modal input:not(.password-input-wrapper input):-webkit-autofill:focus,
+    .auth-modal input:not(.password-input-wrapper input):-webkit-autofill:active {
+      -webkit-text-fill-color: #FFFFFF !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+      font-size: 15px !important;
+      letter-spacing: 0.3px !important;
+      -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
+      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5) inset !important;
+      border: 1px solid #7D7D7D !important;
+      transition: background-color 5000s ease-in-out 0s !important;
     }
 
     .auth-modal button:not(.auth-modal-close) {
