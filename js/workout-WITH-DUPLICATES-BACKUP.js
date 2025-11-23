@@ -1881,7 +1881,7 @@ function login() {
     return;
   }
 
-  fetch(`https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec?username=${username}&password=${password}`)
+  fetch(`https://script.google.com/macros/s/AKfycbyP6JbtXJKWWtgnQ2moPY3W1L1xXOfIReXkXarFCW2VtUtrqrW4gjuwrD3P7jcqafx2VA/exec?username=${username}&password=${password}`)
     .then(res => res.json())
     .then(data => {
       if (data.status === "success") {
@@ -1951,7 +1951,7 @@ function loadUserData(username) {
   }
   
   // Fetch fresh data
-  fetch("https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec")
+  fetch("https://script.google.com/macros/s/AKfycbyP6JbtXJKWWtgnQ2moPY3W1L1xXOfIReXkXarFCW2VtUtrqrW4gjuwrD3P7jcqafx2VA/exec")
     .then(res => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);

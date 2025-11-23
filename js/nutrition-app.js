@@ -41,6 +41,12 @@ async function loadNutritionData() {
     // Update name display
     document.getElementById('user-name-display').textContent = `Piano di ${userData.fullName}`;
 
+    // ✅ CHECK IF USER HAS NUTRITION PLAN ASSIGNED
+    if (!userData.nutritionPdfUrl || userData.nutritionPdfUrl === '') {
+      showNoPlan();
+      return;
+    }
+
     // Check expiration
     const isExpired = checkNutritionExpiration(userData.nutritionScadenza);
     
@@ -48,7 +54,7 @@ async function loadNutritionData() {
       showExpiredBanner();
     }
 
-    // Load nutrition plan JSON (default plan is always available)
+    // Load nutrition plan JSON
     await loadNutritionPlan(userData.nutritionPdfUrl, isExpired);
 
   } catch (error) {
@@ -66,6 +72,12 @@ function checkNutritionExpiration(scadenza) {
 
 async function loadNutritionPlan(pdfUrl, isReadOnly) {
   try {
+    // Safety check: If no PDF URL, show no plan message
+    if (!pdfUrl || pdfUrl === '') {
+      showNoPlan();
+      return;
+    }
+
     // Try to load from localStorage first (cached plan)
     const savedPlan = localStorage.getItem(`nutrition_plan_${userEmail}`);
     

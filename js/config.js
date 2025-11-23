@@ -8,7 +8,7 @@ export const SUPABASE_URL = 'https://nvdrvqamxoqezmfrnjcw.supabase.co';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52ZHJ2cWFteG9xZXptZnJuamN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2NDA3NjIsImV4cCI6MjA3ODIxNjc2Mn0.xyxX2L2mDto9hyWBsEGOqL1Ip73thC8E81V54UAKNEg';
 
 // Google Apps Script URL
-export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec';
+export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyP6JbtXJKWWtgnQ2moPY3W1L1xXOfIReXkXarFCW2VtUtrqrW4gjuwrD3P7jcqafx2VA/exec';
 
 // TTS Server Configuration
 export const TTS_SERVER_URL = 'https://google-tts-server.onrender.com';

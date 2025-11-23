@@ -1,5 +1,5 @@
-const CACHE_NAME = 'viltrum-fitness-v6.2.1';
-const RUNTIME_CACHE = 'viltrum-runtime-v6.2.1';
+const CACHE_NAME = 'viltrum-fitness-v6.2.2';
+const RUNTIME_CACHE = 'viltrum-runtime-v6.2.2';
 
 const urlsToCache = [
   './',
@@ -59,11 +59,11 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing v6.2.1...');
+  console.log('[Service Worker] Installing v6.2.2...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[Service Worker] Caching app shell v6.2.1');
+        console.log('[Service Worker] Caching app shell v6.2.2');
         // Cache files one by one to handle failures gracefully
         return Promise.allSettled(
           urlsToCache.map(url => 
@@ -84,9 +84,17 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Listen for SKIP_WAITING message from update notifier
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[Service Worker] Received SKIP_WAITING message');
+    self.skipWaiting();
+  }
+});
+
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating v6.2.1...');
+  console.log('[Service Worker] Activating v6.2.2...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(

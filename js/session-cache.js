@@ -5,7 +5,7 @@
  */
 
 const SessionCache = {
-  GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec',
+  GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyP6JbtXJKWWtgnQ2moPY3W1L1xXOfIReXkXarFCW2VtUtrqrW4gjuwrD3P7jcqafx2VA/exec',
   CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
   
   /**
